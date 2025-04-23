@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('wastes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('img')->nullable();
+            $table->foreignId('waste_category_id')
+                ->constrained()
+                ->cascadeOnDelete();
             $table->timestamps();
         });
     }
