@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\WasteResource\Pages;
 use App\Filament\Resources\WasteResource\RelationManagers;
+use App\Filament\Resources\WasteResource\RelationManagers\WastePriceRelationManager;
 use App\Models\Waste;
 use App\Models\WasteCategory;
 use Filament\Forms;
@@ -14,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\ImageColumn;
@@ -47,15 +49,45 @@ class WasteResource extends Resource
 
                     Select::make('waste_category_id')
                         ->label('Kategori Sampah')
-                        ->native(false)
                         ->relationship('wasteCategory', 'name')
                         ->preload()
-                        ->optionsLimit(20)
+                        ->native(false)
+                        // ->optionsLimit(50)
                         ->searchable()
                         ->required()
                         ->createOptionForm([
-                            TextInput::make('name')->required()
+                            TextInput::make('name')
+                                ->label('Kategori')
+                                ->required()
                         ]),
+
+                    TextInput::make('purchase_per_kg')
+                        ->prefix('Rp')
+                        ->label('Harga Beli')
+                        ->mask(RawJs::make(<<< 'JS'
+                            $money($input, ',')
+                        JS))
+                        ->stripCharacters('.')
+                        ->extraAlpineAttributes([
+                            'x-ref' => 'input1',
+                            'x-on:keyup' => '$refs.input1.blur(); $refs.input1.focus()'
+                        ])
+                        ->numeric()
+                        ->dehydrated(),
+
+                    TextInput::make('selling_per_kg')
+                        ->prefix('Rp')
+                        ->label('Harga Jual')
+                        ->mask(RawJs::make(<<< 'JS'
+                            $money($input, ',')
+                        JS))
+                        ->stripCharacters('.')
+                        ->integer()
+                        ->extraAlpineAttributes([
+                            'x-ref' => 'input2',
+                            'x-on:keyup' => '$refs.input2.blur(); $refs.input2.focus()'
+                        ])
+                        ->dehydrated(),
 
                     FileUpload::make('img')
                         ->label('Gambar Sampah')
@@ -79,7 +111,13 @@ class WasteResource extends Resource
                     ->label('Gambar')
                     ->visibility('private'),
                 TextColumn::make('wasteCategory.name')
-                    ->label('Kategori')
+                    ->label('Kategori'),
+                TextColumn::make('latestPrice.purchase_per_kg')
+                    ->label('Harga Beli')
+                    ->numeric(),
+                TextColumn::make('latestPrice.selling_per_kg')
+                    ->label('Harga Jual')
+                    ->numeric(),
             ])
             ->filters([
                 //

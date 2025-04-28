@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,6 +16,14 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->enum('type', [TransactionType::PURCHASE->value, TransactionType::SELL->value]);
+            $table->enum('status', [
+                TransactionStatus::NEW->value,
+                TransactionStatus::COMPLETE->value,
+                TransactionStatus::PROCESSING->value,
+                TransactionStatus::RETURNED->value,
+                TransactionStatus::DELIVERED->value,
+                TransactionStatus::CANCELED->value
+            ])->default(TransactionStatus::NEW->value);
             $table->integer('price_total')->nullable();
             $table->timestamps();
         });
