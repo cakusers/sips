@@ -21,12 +21,19 @@ class EditWaste extends EditRecord
         return $data;
     }
 
-    // protected function handleRecordUpdate(Model $record, array $data): Model
-    // {
-    //     $record->update($data);
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        // dd($record->id);
+        $record->update($data);
 
-    //     return $record;
-    // }
+        WastePrice::create([
+            'waste_id' => $record->id,
+            'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
+            'selling_per_kg' => $this->form->getState()['selling_per_kg'],
+        ]);
+
+        return $record;
+    }
 
     protected function getHeaderActions(): array
     {

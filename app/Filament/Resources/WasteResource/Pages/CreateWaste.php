@@ -30,4 +30,9 @@ class CreateWaste extends CreateRecord
 
         return $waste;
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
