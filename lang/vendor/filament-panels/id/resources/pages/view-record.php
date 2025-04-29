@@ -2,9 +2,9 @@
 
 return [
 
-    'title' => 'Lihat :label',
+    'title' => 'Lihat Data :label',
 
-    'breadcrumb' => 'Lihat',
+    'breadcrumb' => 'Lihat Data',
 
     'content' => [
 

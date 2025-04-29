@@ -39,18 +39,18 @@ class CustomerResource extends Resource
                         ->maxLength(255),
                     Forms\Components\TextInput::make('phone')
                         ->label('No. Telepon')
-                        ->prefix('+62')
                         ->placeholder('081xxxxxxxxxx')
                         ->tel()
                         ->required()
                         ->maxLength(20),
                     Forms\Components\TextInput::make('email')
                         ->email()
-                        ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('address')
+                        ->label('Alamat')
                         ->required(),
                     Textarea::make('decription')
+                        ->label('Deskripsi')
                         ->columnSpanFull(),
                 ])->columns(2)
             ]);

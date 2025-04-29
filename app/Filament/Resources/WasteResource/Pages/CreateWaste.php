@@ -2,16 +2,28 @@
 
 namespace App\Filament\Resources\WasteResource\Pages;
 
-use App\Filament\Resources\WasteResource;
 use App\Models\Waste;
-use App\Models\WastePrice;
 use Filament\Actions;
-use Filament\Resources\Pages\CreateRecord;
+use App\Models\WastePrice;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
+use App\Filament\Resources\WasteResource;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateWaste extends CreateRecord
 {
     protected static string $resource = WasteResource::class;
+
+    // protected function getHeaderActions(): array
+    // {
+    //     return [
+    //         Action::make('back')
+    //             ->label('Kembali')
+    //             ->url(route('filament.admin.resources.wastes.index'))
+    //             ->icon('heroicon-m-arrow-left')
+    //             ->color('primary')
+    //     ];
+    // }
 
     protected function handleRecordCreation(array $data): Model
     {

@@ -2,9 +2,9 @@
 
 return [
 
-    'title' => 'Ubah :label',
+    'title' => 'Ubah Data :label',
 
-    'breadcrumb' => 'Ubah',
+    'breadcrumb' => 'Ubah Data',
 
     'form' => [
 

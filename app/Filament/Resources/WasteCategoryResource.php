@@ -6,6 +6,7 @@ use App\Filament\Resources\WasteCategoryResource\Pages;
 use App\Filament\Resources\WasteCategoryResource\RelationManagers;
 use App\Models\WasteCategory;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -34,8 +35,10 @@ class WasteCategoryResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name')
-                    ->required()
+                Section::make()->schema([
+                    TextInput::make('name')
+                        ->required()
+                ])->columnSpan(1)
             ]);
     }
 
@@ -44,6 +47,8 @@ class WasteCategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->sortable()
+                    ->searchable()
             ])
             ->filters([
                 //

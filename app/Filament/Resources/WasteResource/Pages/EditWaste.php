@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\WasteResource\Pages;
 
-use App\Filament\Resources\WasteResource;
-use App\Models\WastePrice;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use App\Models\WastePrice;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\WasteResource;
 
 class EditWaste extends EditRecord
 {
@@ -39,6 +40,11 @@ class EditWaste extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
+            // Action::make('back')
+            //     ->label('Kembali')
+            //     ->url(route('filament.admin.resources.wastes.index'))
+            //     ->icon('heroicon-m-arrow-left')
+            //     ->color('primary')
         ];
     }
 }
