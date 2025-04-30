@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Transaction extends Model
 {
@@ -11,4 +12,9 @@ class Transaction extends Model
         'price_total',
         'status'
     ];
+
+    public function wastes(): BelongsToMany
+    {
+        return $this->belongsToMany(Waste::class, 'waste_transaction');
+    }
 }

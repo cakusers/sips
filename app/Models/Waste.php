@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Waste extends Model
@@ -27,5 +28,10 @@ class Waste extends Model
     public function wastePrices(): HasMany
     {
         return $this->hasMany(WastePrice::class);
+    }
+
+    public function transactions(): BelongsToMany
+    {
+        return $this->belongsToMany(Transaction::class, 'waste_transaction');
     }
 }

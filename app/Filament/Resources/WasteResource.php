@@ -3,8 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WasteResource\Pages;
-use App\Filament\Resources\WasteResource\RelationManagers;
-use App\Filament\Resources\WasteResource\RelationManagers\WastePriceRelationManager;
 use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
 use App\Models\Waste;
 use App\Models\WasteCategory;
@@ -71,7 +69,7 @@ class WasteResource extends Resource
                         Section::make()->schema([
                             TextInput::make('purchase_per_kg')
                                 ->prefix('Rp')
-                                ->label('Harga Beli')
+                                ->label('Harga Beli per Kg')
                                 ->mask(RawJs::make(<<< 'JS'
                                     $money($input, ',')
                                 JS))
@@ -85,7 +83,7 @@ class WasteResource extends Resource
 
                             TextInput::make('selling_per_kg')
                                 ->prefix('Rp')
-                                ->label('Harga Jual')
+                                ->label('Harga Jual per Kg')
                                 ->mask(RawJs::make(<<< 'JS'
                                     $money($input, ',')
                                 JS))
