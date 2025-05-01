@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
 use App\Filament\Resources\TransactionResource\RelationManagers;
+use Filament\Forms\Components\Component;
 
 class TransactionResource extends Resource
 {
@@ -43,20 +44,8 @@ class TransactionResource extends Resource
                             TransactionType::PURCHASE->value => 'Pembelian',
                             TransactionType::SELL->value => 'Penjualan'
                         ])
-                        ->live()
-                        ->required()
-                    // ->dehydrateStateUsing(function (Get $get, Set $set, $state) {
-                    //     $wastes = $get('Sampah yang dipilih');
-                    //     foreach ($wastes as $waste) {
-                    //         if ($state === TransactionType::SELL->value) {
-                    //             $set($waste['transaction_waste_price'], $waste['qty_in_gram'] * $waste['selling_price']);
-                    //         } else {
-                    //             $set($waste['transaction_waste_price'], $waste['qty_in_gram'] * $waste['purchase_price']);
-                    //         }
-                    //     }
-                    //     dd($get('Sampah yang dipilih'));
-                    // })
-                    ,
+                        ->live(),
+
                     Select::make('status')
                         ->options([
                             TransactionStatus::NEW->value => 'Baru',
@@ -81,21 +70,38 @@ class TransactionResource extends Resource
                                 if ($state === null) {
                                     $set('selling_price', 0);
                                     $set('purchase_price', 0);
-                                    $set('transaction_waste_price', $get('qty_in_gram') * 0);
+                                    $set('sub_total', $get('qty_in_gram') * 0);
                                     return;
                                 }
+
                                 $price = Waste::find($state)->latestPrice;
-
-                                $transactionType = $get('../../type');
-
                                 $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
                                 $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
 
-                                if ($transactionType === TransactionType::SELL->value) {
-                                    $set('transaction_waste_price', $get('qty_in_gram') * $price->selling_per_kg);
+                                if ($get('../../type') === TransactionType::SELL->value) {
+                                    $set('sub_total', $get('qty_in_gram') * $price->selling_per_kg);
                                 } else {
-                                    $set('transaction_waste_price', $get('qty_in_gram') * $price->purchase_per_kg);
+                                    $set('sub_total', $get('qty_in_gram') * $price->purchase_per_kg);
                                 }
+                            }),
+
+                        TextInput::make('qty_in_gram')
+                            ->label('Berat (Kg)')
+                            ->default(0)
+                            ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
+                            ->regex('/^(\d+|\d+,\d+)$/')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($livewire, $component, Get $get, Set $set, ?string $state) {
+                                // Live validation On
+                                $livewire->validateOnly($component->getStatePath());
+                                $qtyInFloat = (float) str_replace(',', '.', $state);
+
+                                $sellPrice = (int) str_replace('.', '', $get('selling_price'));
+                                $set('sub_total_sell', number_format($sellPrice * $qtyInFloat, 0, ',', '.'));
+
+                                $purchasePrice = (int) str_replace('.', '', $get('purchase_price'));
+                                $set('sub_total_purchase', number_format($purchasePrice * $qtyInFloat, 0, ',', '.'));
                             }),
 
                         TextInput::make('selling_price')
@@ -111,43 +117,47 @@ class TransactionResource extends Resource
                             ->dehydrated(false)
                             ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
 
-                        TextInput::make('qty_in_gram')
-                            ->label('Berat (Kg)')
-                            ->default(0)
-                            ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
-                            ->regex('/^(\d+|\d+,\d+)$/')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($livewire, $component, Get $get, Set $set, ?string $state) {
 
-                                $livewire->validateOnly($component->getStatePath());
-
-                                if ($get('../../type') === TransactionType::SELL->value) {
-                                    $nominal = (int) str_replace('.', '', $get('selling_price'));
-                                } else {
-                                    $nominal = (int) str_replace('.', '', $get('purchase_price'));
-                                }
-                                $qtyInFloat = (float) str_replace(',', '.', $state);
-                                $set('transaction_waste_price', number_format($nominal * $qtyInFloat, 0, ',', '.'));
-                            }),
-
-                        TextInput::make('transaction_waste_price')
-                            ->label('Harga Total')
+                        TextInput::make('sub_total_sell')
+                            ->label('Sub Total')
                             ->default(0)
                             ->readOnly()
+                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
+
+                        TextInput::make('sub_total_purchase')
+                            ->label('Sub Total')
+                            ->default(0)
+                            ->readOnly()
+                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
 
                     ])->columns(4)
                         ->addAction(function (Get $get, Set $set) {
-                            $total = $total = collect($get('Sampah yang dipilih'))->pluck('transaction_waste_price')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-                            $set('price_total', number_format($total, 0, ',', '.'));
+                            $collection = collect($get('Sampah yang dipilih'));
+                            $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                            $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+
+                            if ($get('../../type') === TransactionType::SELL->value) {
+                                $set('price_total_sell', number_format($totalSell, 0, ',', '.'));
+                            } else {
+                                $set('price_total_purchase', number_format($totalPurchase, 0, ',', '.'));
+                            }
                         })
                 ]),
                 Section::make()->schema([
-                    Forms\Components\TextInput::make('price_total')
+                    Forms\Components\TextInput::make('price_total_sell')
+                        ->label('Harga Total')
                         ->prefix('Rp')
                         ->default(0)
-                        ->readOnly(),
-                ])
+                        ->readOnly()
+                        ->visible(fn(Get $get) => $get('type') === TransactionType::SELL->value),
+                    Forms\Components\TextInput::make('price_total_purchase')
+                        ->label('Harga Total')
+                        ->prefix('Rp')
+                        ->default(0)
+                        ->readOnly()
+                        ->visible(fn(Get $get) => $get('type') === TransactionType::PURCHASE->value)
+                        ->dehydrateStateUsing(fn(Get $get) => dd($get('type'))),
+                ])->columnSpan(1)
             ]);
     }
 
