@@ -24,7 +24,7 @@ return new class extends Migration
                 TransactionStatus::DELIVERED->value,
                 TransactionStatus::CANCELED->value
             ])->default(TransactionStatus::NEW->value);
-            $table->integer('price_total')->nullable();
+            $table->integer('total_price')->nullable();
             $table->timestamps();
         });
     }

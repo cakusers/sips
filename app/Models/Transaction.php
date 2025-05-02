@@ -4,17 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
     protected $fillable = [
         'type',
-        'price_total',
-        'status'
+        'total_price',
+        ''
     ];
 
-    public function wastes(): BelongsToMany
+    // public function wastes(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Waste::class);
+    // }
+
+    public function transactionWastes(): HasMany
     {
-        return $this->belongsToMany(Waste::class, 'waste_transaction');
+        return $this->hasMany(TransactionWaste::class);
     }
 }

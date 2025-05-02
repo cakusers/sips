@@ -30,8 +30,13 @@ class Waste extends Model
         return $this->hasMany(WastePrice::class);
     }
 
-    public function transactions(): BelongsToMany
+    // public function transactions(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Transaction::class);
+    // }
+
+    public function transactionWastes(): HasMany
     {
-        return $this->belongsToMany(Transaction::class, 'waste_transaction');
+        return $this->hasMany(TransactionWaste::class);
     }
 }

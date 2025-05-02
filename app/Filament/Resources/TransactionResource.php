@@ -10,20 +10,22 @@ use Filament\Forms\Set;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
-use Filament\Support\RawJs;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Columns\SelectColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-use App\Filament\Resources\TransactionResource\RelationManagers;
-use Filament\Forms\Components\Component;
 
 class TransactionResource extends Resource
 {
@@ -33,6 +35,19 @@ class TransactionResource extends Resource
 
     protected static ?string $label = 'Transaksi';
 
+    protected static array $transactionType = [
+        TransactionType::PURCHASE->value => 'Pembelian',
+        TransactionType::SELL->value => 'Penjualan'
+    ];
+
+    protected static array $transactionStatus = [
+        TransactionStatus::NEW->value => 'Baru',
+        TransactionStatus::COMPLETE->value => 'Selesai',
+        TransactionStatus::DELIVERED->value => 'Dikirimkan',
+        TransactionStatus::CANCELED->value => 'Dibatalkan',
+        TransactionStatus::RETURNED->value => 'Dikembalikan',
+    ];
+
     public static function form(Form $form): Form
     {
         return $form
@@ -40,123 +55,170 @@ class TransactionResource extends Resource
                 Section::make()->schema([
                     Forms\Components\Select::make('type')
                         ->label('Tipe Transaksi')
-                        ->options([
-                            TransactionType::PURCHASE->value => 'Pembelian',
-                            TransactionType::SELL->value => 'Penjualan'
-                        ])
+                        ->options(self::$transactionType)
+                        ->required()
                         ->live(),
 
                     Select::make('status')
-                        ->options([
-                            TransactionStatus::NEW->value => 'Baru',
-                            TransactionStatus::COMPLETE->value => 'Selesai',
-                            TransactionStatus::DELIVERED->value => 'Dikirimkan',
-                            TransactionStatus::CANCELED->value => 'Dibatalkan',
-                            TransactionStatus::RETURNED->value => 'Dikembalikan',
-                        ])->default(TransactionStatus::NEW)
+                        ->options(self::$transactionStatus)
+                        ->default(TransactionStatus::NEW)
                 ])->columns(2),
 
                 Section::make()->schema([
-                    Repeater::make('Sampah yang dipilih')->schema([
-                        Select::make('waste_id')
-                            ->label('Sampah')
-                            ->relationship('wastes', 'name')
-                            ->preload()
-                            ->searchable()
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                    Repeater::make('transactionWastes')
+                        ->relationship()
+                        ->schema([
+                            Select::make('waste_id')
+                                ->relationship('waste', 'name')
+                                ->label('Sampah')
+                                ->preload()
+                                ->searchable()
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(
+                                    function (Get $get, Set $set, ?string $state) {
 
-                                if ($state === null) {
-                                    $set('selling_price', 0);
-                                    $set('purchase_price', 0);
-                                    $set('sub_total', $get('qty_in_gram') * 0);
-                                    return;
-                                }
+                                        if ($state === null) {
+                                            $set('selling_price', 0);
+                                            $set('purchase_price', 0);
+                                            $set('sub_total_sell', $get('qty_in_kg') * 0);
+                                            $set('sub_total_purchase', $get('qty_in_kg') * 0);
+                                            return;
+                                        }
 
-                                $price = Waste::find($state)->latestPrice;
-                                $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
-                                $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
+                                        $price = Waste::find($state)->latestPrice;
 
-                                if ($get('../../type') === TransactionType::SELL->value) {
-                                    $set('sub_total', $get('qty_in_gram') * $price->selling_per_kg);
-                                } else {
-                                    $set('sub_total', $get('qty_in_gram') * $price->purchase_per_kg);
-                                }
-                            }),
+                                        $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
+                                        $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
 
-                        TextInput::make('qty_in_gram')
-                            ->label('Berat (Kg)')
-                            ->default(0)
-                            ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
-                            ->regex('/^(\d+|\d+,\d+)$/')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($livewire, $component, Get $get, Set $set, ?string $state) {
-                                // Live validation On
-                                $livewire->validateOnly($component->getStatePath());
-                                $qtyInFloat = (float) str_replace(',', '.', $state);
+                                        $set('sub_total_sell', number_format($get('qty_in_kg') * $price->selling_per_kg,  0, ',', '.'));
+                                        $set('sub_total_purchase', number_format($get('qty_in_kg') * $price->purchase_per_kg,  0, ',', '.'));
+                                    }
+                                ),
 
-                                $sellPrice = (int) str_replace('.', '', $get('selling_price'));
-                                $set('sub_total_sell', number_format($sellPrice * $qtyInFloat, 0, ',', '.'));
+                            TextInput::make('qty_in_kg')
+                                ->label('Berat (Kg)')
+                                ->default(0)
+                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
+                                ->suffix('Kg')
+                                ->regex('/^(\d+|\d+,\d+)$/')
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(
+                                    function ($livewire, $component, Get $get, Set $set, ?string $state) {
+                                        // Live validation: true
+                                        $livewire->validateOnly($component->getStatePath());
 
-                                $purchasePrice = (int) str_replace('.', '', $get('purchase_price'));
-                                $set('sub_total_purchase', number_format($purchasePrice * $qtyInFloat, 0, ',', '.'));
-                            }),
+                                        $qtyInFloat = (float) str_replace(',', '.', $state);
 
-                        TextInput::make('selling_price')
-                            ->label('Harga Jual/Kg')
-                            ->default(0)
-                            ->readOnly()
-                            ->dehydrated(false)
-                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
-                        TextInput::make('purchase_price')
-                            ->label('Harga Beli/Kg')
-                            ->default(0)
-                            ->readOnly()
-                            ->dehydrated(false)
-                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
+                                        $sellPrice = (int) str_replace('.', '', $get('selling_price'));
+                                        $set('sub_total_sell', number_format($sellPrice * $qtyInFloat, 0, ',', '.'));
+
+                                        $purchasePrice = (int) str_replace('.', '', $get('purchase_price'));
+                                        $set('sub_total_purchase', number_format($purchasePrice * $qtyInFloat, 0, ',', '.'));
+                                    }
+                                ),
+
+                            TextInput::make('selling_price')
+                                ->label('Harga Jual/Kg')
+                                ->prefix('Rp')
+                                ->default(0)
+                                ->readOnly()
+                                ->dehydrated(false)
+                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
+                            TextInput::make('purchase_price')
+                                ->label('Harga Beli/Kg')
+                                ->prefix('Rp')
+                                ->default(0)
+                                ->readOnly()
+                                ->dehydrated(false)
+                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
 
 
-                        TextInput::make('sub_total_sell')
-                            ->label('Sub Total')
-                            ->default(0)
-                            ->readOnly()
-                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
+                            TextInput::make('sub_total_sell')
+                                ->label('Sub Total')
+                                ->prefix('Rp')
+                                ->default(0)
+                                ->readOnly()
+                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
 
-                        TextInput::make('sub_total_purchase')
-                            ->label('Sub Total')
-                            ->default(0)
-                            ->readOnly()
-                            ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
+                            TextInput::make('sub_total_purchase')
+                                ->label('Sub Total')
+                                ->prefix('Rp')
+                                ->default(0)
+                                ->readOnly()
+                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
 
-                    ])->columns(4)
-                        ->addAction(function (Get $get, Set $set) {
-                            $collection = collect($get('Sampah yang dipilih'));
-                            $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-                            $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                        ])
+                        ->live()
+                        ->columns(4)
+                        ->addAction(
+                            function ($state, Set $set) {
+                                $collection = collect($state);
+                                $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                                $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
 
-                            if ($get('../../type') === TransactionType::SELL->value) {
-                                $set('price_total_sell', number_format($totalSell, 0, ',', '.'));
-                            } else {
-                                $set('price_total_purchase', number_format($totalPurchase, 0, ',', '.'));
+                                $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
+                                $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
                             }
-                        })
+                        )
+                        ->mutateRelationshipDataBeforeCreateUsing(
+                            function (array $data, Get $get): array {
+
+                                $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
+                                if ($get('type') === TransactionType::SELL->value) {
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
+                                } else {
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
+                                }
+
+                                return $data;
+                            }
+                        )
+                        ->mutateRelationshipDataBeforeFillUsing(
+                            function (array $data, Get $get): array {
+
+                                $price = Waste::find($data['waste_id'])->latestPrice;
+
+                                if ($get('type') === TransactionType::SELL->value) {
+                                    $data['selling_price'] = number_format($price->selling_per_kg, 0, ',', '.');
+                                    $data['sub_total_sell'] = number_format($data['sub_total_price'], 0, ',', '.');
+                                } else {
+                                    $data['purchase_price'] = number_format($price->purchase_per_kg, 0, ',', '.');
+                                    $data['sub_total_purchase'] = number_format($data['sub_total_price'], 0, ',', '.');
+                                }
+
+                                return $data;
+                            }
+                        )
+                        ->mutateRelationshipDataBeforeSaveUsing(
+                            function (array $data, Get $get): array {
+
+                                $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
+                                if ($get('type') === TransactionType::SELL->value) {
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
+                                } else {
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
+                                }
+
+                                return $data;
+                            }
+                        )
                 ]),
+
                 Section::make()->schema([
-                    Forms\Components\TextInput::make('price_total_sell')
+                    Forms\Components\TextInput::make('total_price_sell')
                         ->label('Harga Total')
                         ->prefix('Rp')
                         ->default(0)
                         ->readOnly()
-                        ->visible(fn(Get $get) => $get('type') === TransactionType::SELL->value),
-                    Forms\Components\TextInput::make('price_total_purchase')
+                        ->visible(fn(Get $get) => $get('type') === TransactionType::SELL->value || $get('type') === null),
+                    Forms\Components\TextInput::make('total_price_purchase')
                         ->label('Harga Total')
                         ->prefix('Rp')
                         ->default(0)
                         ->readOnly()
-                        ->visible(fn(Get $get) => $get('type') === TransactionType::PURCHASE->value)
-                        ->dehydrateStateUsing(fn(Get $get) => dd($get('type'))),
+                        ->visible(fn(Get $get) => $get('type') === TransactionType::PURCHASE->value),
                 ])->columnSpan(1)
             ]);
     }
@@ -165,23 +227,35 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type'),
-                Tables\Columns\TextColumn::make('price_total')
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe'),
+                Tables\Columns\TextColumn::make('total_price')
+                    ->label('Harga Total')
                     ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable(),
+                SelectColumn::make('status')
+                    ->label('Status Transaksi')
+                    ->options(self::$transactionStatus),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dilakukan Pada')
+                    ->dateTime('j F o, H.i')
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Diupdate Pada')
+                    ->dateTime('j F o, H.i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('type')
+                    ->options(self::$transactionType),
+                SelectFilter::make('status')
+                    ->options(self::$transactionStatus)
             ])
             ->actions([
+                ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 DeleteAction::make()
             ])

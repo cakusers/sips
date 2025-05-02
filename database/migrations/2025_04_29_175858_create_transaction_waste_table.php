@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('waste_transaction', function (Blueprint $table) {
+        Schema::create('transaction_waste', function (Blueprint $table) {
             $table->id();
             $table->foreignId('waste_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->integer('qty_in_gram');
-            $table->integer('transaction_waste_price');
+            $table->float('qty_in_kg');
+            $table->integer('sub_total_price');
             $table->foreignId('transaction_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
