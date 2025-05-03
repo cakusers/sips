@@ -11,6 +11,8 @@ class EditTransaction extends EditRecord
 {
     protected static string $resource = TransactionResource::class;
 
+
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         if ($data['type'] === TransactionType::SELL->value) {

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use Illuminate\Validation\Validator;
+use Livewire\Component as Livewire;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Waste;
@@ -67,6 +69,7 @@ class TransactionResource extends Resource
                 Section::make()->schema([
                     Repeater::make('transactionWastes')
                         ->relationship()
+                        ->addActionLabel('Tambahkan Sampah yang dipilih')
                         ->schema([
                             Select::make('waste_id')
                                 ->relationship('waste', 'name')
@@ -102,11 +105,18 @@ class TransactionResource extends Resource
                                 ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
                                 ->suffix('Kg')
                                 ->regex('/^(\d+|\d+,\d+)$/')
+                                ->validationMessages([
+                                    'regex' => 'Kolom harus berisi angka'
+                                ])
                                 ->required()
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(
-                                    function ($livewire, $component, Get $get, Set $set, ?string $state) {
+                                    function (Livewire $livewire, $component, Get $get, Set $set, ?string $state) {
                                         // Live validation: true
+                                        $livewire
+                                            ->addMessagesFromOutside([
+                                                'regex' => 'Kolom harus berisi angka'
+                                            ]);
                                         $livewire->validateOnly($component->getStatePath());
 
                                         $qtyInFloat = (float) str_replace(',', '.', $state);
@@ -125,6 +135,8 @@ class TransactionResource extends Resource
                                 ->default(0)
                                 ->readOnly()
                                 ->dehydrated(false)
+                                ->live()
+                                ->afterStateUpdated(fn($state) => dd($state))
                                 ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
                             TextInput::make('purchase_price')
                                 ->label('Harga Beli/Kg')
@@ -161,6 +173,18 @@ class TransactionResource extends Resource
                                 $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
                                 $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
                             }
+                        )
+                        ->deleteAction(
+                            function (Action $action) {
+                                $action->after(function (Set $set, $state) {
+                                    $collection = collect($state);
+                                    $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                                    $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+
+                                    $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
+                                    $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
+                                });
+                            },
                         )
                         ->mutateRelationshipDataBeforeCreateUsing(
                             function (array $data, Get $get): array {
@@ -205,6 +229,9 @@ class TransactionResource extends Resource
                             }
                         )
                 ]),
+
+                // TextInput::make('tes')->default(10),
+                // TextInput::make('tes2'),
 
                 Section::make()->schema([
                     Forms\Components\TextInput::make('total_price_sell')

@@ -19,11 +19,9 @@ class CreateTransaction extends CreateRecord
         } else {
             $data['total_price'] = (int) str_replace('.', '', $data['total_price_purchase']);
         }
-        
+
         return $data;
     }
-
-
 
     protected function getRedirectUrl(): string
     {
