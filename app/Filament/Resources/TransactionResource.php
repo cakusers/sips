@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
+use App\Models\Customer;
+use Filament\Tables\Columns\TextColumn;
 
 class TransactionResource extends Resource
 {
@@ -61,10 +63,19 @@ class TransactionResource extends Resource
                         ->required()
                         ->live(),
 
+                    Select::make('customer_id')
+                        ->label('Pelanggan')
+                        ->relationship('customer', 'name')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn(Set $set, $state) => $set('address', Customer::firstWhere('id', $state)->get()[0]->address)),
+
                     Select::make('status')
                         ->options(self::$transactionStatus)
                         ->default(TransactionStatus::NEW)
-                ])->columns(2),
+                ])->columns(3),
 
                 Section::make()->schema([
                     Repeater::make('transactionWastes')
@@ -127,7 +138,8 @@ class TransactionResource extends Resource
                                         $purchasePrice = (int) str_replace('.', '', $get('purchase_price'));
                                         $set('sub_total_purchase', number_format($purchasePrice * $qtyInFloat, 0, ',', '.'));
                                     }
-                                ),
+                                )
+                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
 
                             TextInput::make('selling_price')
                                 ->label('Harga Jual/Kg')
@@ -230,9 +242,6 @@ class TransactionResource extends Resource
                         )
                 ]),
 
-                // TextInput::make('tes')->default(10),
-                // TextInput::make('tes2'),
-
                 Section::make()->schema([
                     Forms\Components\TextInput::make('total_price_sell')
                         ->label('Harga Total')
@@ -246,7 +255,14 @@ class TransactionResource extends Resource
                         ->default(0)
                         ->readOnly()
                         ->visible(fn(Get $get) => $get('type') === TransactionType::PURCHASE->value),
-                ])->columnSpan(1)
+                ])->columnSpan(1),
+
+                Section::make()->schema([
+                    TextInput::make('address')
+                        ->label('Alamat Pelanggan')
+                        ->readOnly()
+                ])
+                    ->columnSpan(1),
             ]);
     }
 
@@ -254,8 +270,14 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('customer.name')
+                    ->label('Pelanggan')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Tipe'),
+                    ->label('Tipe')
+                    ->formatStateUsing(fn($state) => $state === TransactionType::SELL ? 'Pembelian' : 'Penjualan')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga Total')
                     ->numeric()
@@ -275,6 +297,7 @@ class TransactionResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('type')
                     ->options(self::$transactionType),

@@ -25,6 +25,7 @@ return new class extends Migration
                 TransactionStatus::CANCELED->value
             ])->default(TransactionStatus::NEW->value);
             $table->integer('total_price')->nullable();
+            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
