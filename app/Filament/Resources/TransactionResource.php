@@ -2,23 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use Illuminate\Validation\Validator;
-use Livewire\Component as Livewire;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Waste;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\Customer;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
+use Livewire\Component as Livewire;
+use Illuminate\Validation\Validator;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\DeleteAction;
@@ -28,8 +31,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-use App\Models\Customer;
-use Filament\Tables\Columns\TextColumn;
 
 class TransactionResource extends Resource
 {
@@ -70,7 +71,30 @@ class TransactionResource extends Resource
                         ->searchable()
                         ->preload()
                         ->live(onBlur: true)
-                        ->afterStateUpdated(fn(Set $set, $state) => $set('address', Customer::firstWhere('id', $state)->get()[0]->address)),
+                        ->afterStateUpdated(fn(Set $set, $state) => $state !== null ? $set('address', (Customer::where('id', $state)->first()->address)) : $set('address', ''))
+                        ->createOptionForm([
+                            Section::make()->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nama')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('No. Telepon')
+                                    ->placeholder('081xxxxxxxxxx')
+                                    ->tel()
+                                    ->required()
+                                    ->maxLength(20),
+                                Forms\Components\TextInput::make('email')
+                                    ->email()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('address')
+                                    ->label('Alamat')
+                                    ->required(),
+                                Textarea::make('decription')
+                                    ->label('Deskripsi')
+                                    ->columnSpanFull(),
+                            ])
+                        ]),
 
                     Select::make('status')
                         ->options(self::$transactionStatus)
