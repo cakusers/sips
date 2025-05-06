@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('img')->nullable();
+            $table->float('stock_in_kg')->default(0);
+            $table->float('min_stock_in_kg')->default(0);
             $table->foreignId('waste_category_id')
                 ->constrained()
                 ->cascadeOnDelete();

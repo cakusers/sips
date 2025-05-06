@@ -12,6 +12,8 @@ class Waste extends Model
     protected $fillable = [
         'name',
         'img',
+        'stock_in_kg',
+        'min_stock_in_kg',
         'waste_category_id'
     ];
 

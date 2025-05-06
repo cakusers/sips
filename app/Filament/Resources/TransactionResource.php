@@ -124,7 +124,11 @@ class TransactionResource extends Resource
                                             return;
                                         }
 
-                                        $price = Waste::find($state)->latestPrice;
+                                        $waste = Waste::find($state);
+
+                                        $set('stock_in_kg', $waste->stock_in_kg);
+
+                                        $price = $waste->latestPrice;
 
                                         $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
                                         $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
@@ -165,6 +169,13 @@ class TransactionResource extends Resource
                                 )
                                 ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
 
+                            TextInput::make('stock_in_kg')
+                                ->label('Stok Tersedia')
+                                ->suffix('Kg')
+                                ->default(0)
+                                ->readOnly()
+                                ->dehydrated(false),
+
                             TextInput::make('selling_price')
                                 ->label('Harga Jual/Kg')
                                 ->prefix('Rp')
@@ -199,7 +210,7 @@ class TransactionResource extends Resource
 
                         ])
                         ->live()
-                        ->columns(4)
+                        ->columns(5)
                         ->addAction(
                             function ($state, Set $set) {
                                 $collection = collect($state);
@@ -228,8 +239,10 @@ class TransactionResource extends Resource
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
                                 if ($get('type') === TransactionType::SELL->value) {
                                     $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
+                                    Waste::where('id', $data['waste_id'])->first()->decrement('stock_in_kg', $data['qty_in_kg']);
                                 } else {
                                     $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
+                                    Waste::where('id', $data['waste_id'])->first()->increment('stock_in_kg', $data['qty_in_kg']);
                                 }
 
                                 return $data;

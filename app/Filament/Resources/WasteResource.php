@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Livewire\Component as Livewire;
 use App\Filament\Resources\WasteResource\Pages;
 use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
 use App\Models\Waste;
@@ -96,6 +97,44 @@ class WasteResource extends Resource
                                 ->required()
                                 ->dehydrated(),
                         ])->columnSpan(1),
+
+                        Section::make()->schema([
+                            TextInput::make('stock_in_kg')
+                                ->label('Stok Saat Ini')
+                                ->readOnly()
+                                ->default(0)
+                                ->suffix('Kg')
+                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok saat ini tidak bisa diisi, akan bertambah/berkurang bila transaksi dilaksanakan')
+                                ->dehydrated(false)
+                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
+
+                            TextInput::make('min_stock_in_kg')
+                                ->label('Stok Minimal')
+                                ->default(0)
+                                ->required()
+                                ->suffix('Kg')
+                                ->live(onBlur: true)
+                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok minimum pada gudang. Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
+                                ->regex('/^(\d+|\d+,\d+)$/')
+                                ->validationMessages([
+                                    'regex' => 'Kolom harus berisi angka'
+                                ])
+                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                                ->afterStateUpdated(
+                                    function (Livewire $livewire, $component) {
+                                        $livewire->addMessagesFromOutside([
+                                            'regex' => 'Kolom harus berisi angka'
+                                        ]);
+                                        $livewire->validateOnly($component->getStatePath());
+                                    }
+                                )
+                                ->dehydrateStateUsing(
+                                    fn($state) => (float) str_replace(',', '.', $state)
+                                )
+
+
+
+                        ])->columnSpan(1),
                         Section::make()->schema([
                             FileUpload::make('img')
                                 ->label('Gambar Sampah')
@@ -121,6 +160,8 @@ class WasteResource extends Resource
                 TextColumn::make('wasteCategory.name')
                     ->label('Kategori')
                     ->sortable(),
+                TextColumn::make('stock_in_kg')
+                    ->label('Stok Tersedia'),
                 TextColumn::make('latestPrice.purchase_per_kg')
                     ->label('Harga Beli')
                     ->numeric()

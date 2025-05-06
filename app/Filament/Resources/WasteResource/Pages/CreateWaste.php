@@ -27,11 +27,11 @@ class CreateWaste extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-
         $waste = Waste::create([
             'name' => $data['name'],
             'img' => $data['img'],
-            'waste_category_id' => $data['waste_category_id']
+            'waste_category_id' => $data['waste_category_id'],
+            'min_stock_in_kg' => $data['min_stock_in_kg']
         ]);
 
         WastePrice::create([

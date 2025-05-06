@@ -15,6 +15,7 @@ class EditWaste extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        // dd($data);
         $current_price = WastePrice::query()->where('waste_id', $data['id'])->get()->last();
         $data['purchase_per_kg'] = $current_price->purchase_per_kg;
         $data['selling_per_kg'] = $current_price->selling_per_kg;
@@ -31,6 +32,7 @@ class EditWaste extends EditRecord
             'waste_id' => $record->id,
             'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
             'selling_per_kg' => $this->form->getState()['selling_per_kg'],
+            'min_stock_in_kg' => $data['min_stock_in_kg']
         ]);
 
         return $record;
