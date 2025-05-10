@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
+use Illuminate\Database\Eloquent\Model;
 
 class TransactionResource extends Resource
 {
@@ -41,8 +42,8 @@ class TransactionResource extends Resource
     protected static ?string $label = 'Transaksi';
 
     protected static array $transactionType = [
-        TransactionType::PURCHASE->value => 'Pembelian',
-        TransactionType::SELL->value => 'Penjualan'
+        TransactionType::PURCHASE->value => 'Beli',
+        TransactionType::SELL->value => 'Jual'
     ];
 
     protected static array $transactionStatus = [
@@ -63,6 +64,10 @@ class TransactionResource extends Resource
                         ->options(self::$transactionType)
                         ->required()
                         ->live(),
+
+                    Select::make('typeHidden')
+                        ->hidden()
+                        ->options(self::$transactionType),
 
                     Select::make('customer_id')
                         ->label('Pelanggan')
@@ -103,6 +108,7 @@ class TransactionResource extends Resource
 
                 Section::make()->schema([
                     Repeater::make('transactionWastes')
+                        ->label('Sampah Yang Dipilih')
                         ->relationship()
                         ->addActionLabel('Tambahkan Sampah yang dipilih')
                         ->schema([
@@ -119,6 +125,7 @@ class TransactionResource extends Resource
                                         if ($state === null) {
                                             $set('selling_price', 0);
                                             $set('purchase_price', 0);
+                                            $set('stock_in_kg', 0);
                                             $set('sub_total_sell', $get('qty_in_kg') * 0);
                                             $set('sub_total_purchase', $get('qty_in_kg') * 0);
                                             return;
@@ -249,30 +256,51 @@ class TransactionResource extends Resource
                             }
                         )
                         ->mutateRelationshipDataBeforeFillUsing(
-                            function (array $data, Get $get): array {
+                            function (array $data): array {
 
-                                $price = Waste::find($data['waste_id'])->latestPrice;
+                                $waste = Waste::find($data['waste_id']);
+                                $price = $waste->latestPrice;
 
-                                if ($get('type') === TransactionType::SELL->value) {
-                                    $data['selling_price'] = number_format($price->selling_per_kg, 0, ',', '.');
-                                    $data['sub_total_sell'] = number_format($data['sub_total_price'], 0, ',', '.');
-                                } else {
-                                    $data['purchase_price'] = number_format($price->purchase_per_kg, 0, ',', '.');
-                                    $data['sub_total_purchase'] = number_format($data['sub_total_price'], 0, ',', '.');
-                                }
+                                $data['selling_price'] = number_format($price->selling_per_kg, 0, ',', '.');
+                                $data['sub_total_sell'] = number_format($price->selling_per_kg * $data['qty_in_kg'], 0, ',', '.');
+
+                                $data['purchase_price'] = number_format($price->purchase_per_kg, 0, ',', '.');
+                                $data['sub_total_purchase'] = number_format($price->purchase_per_kg * $data['qty_in_kg'], 0, ',', '.');
+
+                                $data['stock_in_kg'] = str_replace('.', ',', $waste->stock_in_kg);
 
                                 return $data;
                             }
                         )
                         ->mutateRelationshipDataBeforeSaveUsing(
-                            function (array $data, Get $get): array {
+                            // TODO : Logika Stok ketikda diupdate belum jalan
+                            function (array $data, Get $get, Model $record, Set $set): array {
 
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
-                                if ($get('type') === TransactionType::SELL->value) {
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
+
+                                // dd($data, $record);
+                                $oldType = $get('typeHidden');
+                                $newType = $get('type');
+                                $waste = Waste::where('id', $data['waste_id'])->first();
+
+                                // Rollback stok berdasarkan data lama
+                                if ($oldType === TransactionType::PURCHASE->value) {
+                                    $waste->stock_in_kg -= $record->qty_in_kg;
                                 } else {
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
+                                    $waste->stock_in_kg += $record->qty_in_kg;
                                 }
+
+                                // Penghitungan stok baru
+                                $set('typeHidden', $newType);
+                                if ($newType === TransactionType::PURCHASE->value) {
+                                    $waste->stock_in_kg += $data['qty_in_kg'];
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
+                                } else {
+                                    $waste->stock_in_kg -= $data['qty_in_kg'];
+                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
+                                }
+
+                                $waste->save();
 
                                 return $data;
                             }
@@ -313,7 +341,7 @@ class TransactionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
-                    ->formatStateUsing(fn($state) => $state === TransactionType::SELL ? 'Pembelian' : 'Penjualan')
+                    ->formatStateUsing(fn($state) => $state === TransactionType::SELL->value ? 'Jual' : 'Beli')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga Total')

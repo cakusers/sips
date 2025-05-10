@@ -19,6 +19,7 @@ use Filament\Resources\Resource;
 use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -154,14 +155,13 @@ class WasteResource extends Resource
                     ->label('Nama')
                     ->sortable()
                     ->searchable(),
-                ImageColumn::make('img')
-                    ->label('Gambar')
-                    ->visibility('private'),
+                // ImageColumn::make('img')
+                //     ->label('Gambar')
+                //     ->visibility('private'),
                 TextColumn::make('wasteCategory.name')
                     ->label('Kategori')
                     ->sortable(),
-                TextColumn::make('stock_in_kg')
-                    ->label('Stok Tersedia'),
+
                 TextColumn::make('latestPrice.purchase_per_kg')
                     ->label('Harga Beli')
                     ->numeric()
@@ -172,11 +172,22 @@ class WasteResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('stock_in_kg')
+                    ->label('Stok Tersedia')
+                    ->suffix(' Kg')
+                    ->color(fn(string $state) => $state === '0' ? 'danger' : ''),
+                // TextColumn::make('min_stock_in_kg')
+                //     ->label('Keterangan')
+                //     ->state(function (Waste $record): bool {
+                //         return $record->stock_in_kg > $record->min_stock_in_kg;
+                //     })
+                //     ->formatStateUsing(fn(string $state) => $state ? 'Ya' : 'Tidak'),
             ])
             ->filters([
                 SelectFilter::make('Kategori')->relationship('wasteCategory', 'name')
             ])
             ->actions([
+                ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 DeleteAction::make(),
             ])

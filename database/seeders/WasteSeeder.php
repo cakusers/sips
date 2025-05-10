@@ -21,18 +21,21 @@ class WasteSeeder extends Seeder
                 'waste_category_id' => 1,
                 'purchase_per_kg' => 1500,
                 'selling_per_kg' => 2000,
+                'stock_in_kg' => 45,
             ],
             [
                 'name' => 'Botol Kaca',
                 'waste_category_id' => 3,
                 'purchase_per_kg' => 2000,
                 'selling_per_kg' => 2500,
+                'stock_in_kg' => 0,
             ],
             [
                 'name' => 'Kertas Karton',
                 'waste_category_id' => 2,
                 'purchase_per_kg' => 800,
                 'selling_per_kg' => 1000,
+                'stock_in_kg' => 0,
             ],
         ];
 
@@ -40,7 +43,8 @@ class WasteSeeder extends Seeder
 
             $currentWaste = Waste::create([
                 'name' => $waste['name'],
-                'waste_category_id' => $waste['waste_category_id']
+                'waste_category_id' => $waste['waste_category_id'],
+                'stock_in_kg' => $waste['stock_in_kg']
             ]);
             WastePrice::create([
                 'waste_id' => $currentWaste->id,

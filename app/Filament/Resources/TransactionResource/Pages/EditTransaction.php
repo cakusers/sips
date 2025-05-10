@@ -11,7 +11,12 @@ class EditTransaction extends EditRecord
 {
     protected static string $resource = TransactionResource::class;
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['typeHidden'] = $data['type'];
 
+        return $data;
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
