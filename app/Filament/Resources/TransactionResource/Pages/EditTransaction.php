@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TransactionResource\Pages;
 
 use App\Enums\TransactionType;
 use App\Filament\Resources\TransactionResource;
+use App\Models\Customer;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,7 +14,10 @@ class EditTransaction extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+
         $data['typeHidden'] = $data['type'];
+        $data['address'] = Customer::find($data['customer_id'])->address;
+
 
         return $data;
     }

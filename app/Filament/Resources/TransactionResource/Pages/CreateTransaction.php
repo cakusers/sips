@@ -20,6 +20,8 @@ class CreateTransaction extends CreateRecord
             $data['total_price'] = (int) str_replace('.', '', $data['total_price_purchase']);
         }
 
+
+
         return $data;
     }
 

@@ -15,13 +15,13 @@ use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
 use Livewire\Component as Livewire;
-use Illuminate\Validation\Validator;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\DeleteAction;
@@ -29,9 +29,10 @@ use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-use Illuminate\Database\Eloquent\Model;
+use Closure;
 
 class TransactionResource extends Resource
 {
@@ -133,15 +134,16 @@ class TransactionResource extends Resource
 
                                         $waste = Waste::find($state);
 
-                                        $set('stock_in_kg', $waste->stock_in_kg);
+                                        $set('stock_in_kg', str_replace('.', ',', $waste->stock_in_kg));
 
                                         $price = $waste->latestPrice;
 
                                         $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
                                         $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
 
-                                        $set('sub_total_sell', number_format($get('qty_in_kg') * $price->selling_per_kg,  0, ',', '.'));
-                                        $set('sub_total_purchase', number_format($get('qty_in_kg') * $price->purchase_per_kg,  0, ',', '.'));
+                                        $qtyInFloat = (float) str_replace(',', '.', $get('qty_in_kg'));
+                                        $set('sub_total_sell', number_format($qtyInFloat * $price->selling_per_kg,  0, ',', '.'));
+                                        $set('sub_total_purchase', number_format($qtyInFloat * $price->purchase_per_kg,  0, ',', '.'));
                                     }
                                 ),
 
@@ -152,18 +154,57 @@ class TransactionResource extends Resource
                                 ->suffix('Kg')
                                 ->regex('/^(\d+|\d+,\d+)$/')
                                 ->validationMessages([
-                                    'regex' => 'Kolom harus berisi angka'
+                                    'regex' => 'Kolom harus berisi format angka yang sesuai'
                                 ])
                                 ->required()
+                                ->rules([
+                                    fn(Get $get, string $operation, ?Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $operation, $record) {
+                                        // dd($record);
+
+                                        $quantity = (float) str_replace(',', '.', $value);
+                                        $availableStock = (float) str_replace(',', '.', $get('stock_in_kg'));
+
+                                        if ($quantity <= 0) {
+                                            $fail('Berisi minimal 0,1 Kg');
+                                        }
+
+                                        if ($operation === 'create') {
+
+                                            if ($get('../../type') === TransactionType::SELL->value) {
+                                                if ($availableStock < $quantity) {
+                                                    $fail('Stok tidak cukup untuk penjualan');
+                                                }
+                                            }
+                                        }
+
+                                        if ($operation === 'edit') {
+
+                                            $oldType = $get('../../typeHidden');
+                                            $newType = $get('../../type');
+
+                                            if ($oldType === TransactionType::SELL->value) {
+                                                $availableStock += $record->qty_in_kg;
+                                            }
+
+                                            if ($newType === TransactionType::SELL->value) {
+                                                // dd($availableStock);
+                                                if ($availableStock <= $value) {
+                                                    $fail('Stok tidak cukup untuk penjualan');
+                                                }
+                                                $availableStock -= $value;
+                                            }
+                                        }
+                                    }
+                                ])
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(
                                     function (Livewire $livewire, $component, Get $get, Set $set, ?string $state) {
                                         // Live validation: true
-                                        $livewire
-                                            ->addMessagesFromOutside([
-                                                'regex' => 'Kolom harus berisi angka'
-                                            ]);
-                                        $livewire->validateOnly($component->getStatePath());
+                                        // $livewire
+                                        //     ->addMessagesFromOutside([
+                                        //         'regex' => 'Kolom harus berisi angka'
+                                        //     ]);
+                                        // $livewire->validateOnly($component->getStatePath());
 
                                         $qtyInFloat = (float) str_replace(',', '.', $state);
 
@@ -180,8 +221,7 @@ class TransactionResource extends Resource
                                 ->label('Stok Tersedia')
                                 ->suffix('Kg')
                                 ->default(0)
-                                ->readOnly()
-                                ->dehydrated(false),
+                                ->readOnly(),
 
                             TextInput::make('selling_price')
                                 ->label('Harga Jual/Kg')
@@ -242,8 +282,9 @@ class TransactionResource extends Resource
                         )
                         ->mutateRelationshipDataBeforeCreateUsing(
                             function (array $data, Get $get): array {
-
+                                // dd($data);
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
+
                                 if ($get('type') === TransactionType::SELL->value) {
                                     $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
                                     Waste::where('id', $data['waste_id'])->first()->decrement('stock_in_kg', $data['qty_in_kg']);
@@ -275,13 +316,12 @@ class TransactionResource extends Resource
                         ->mutateRelationshipDataBeforeSaveUsing(
                             // TODO : Logika Stok ketikda diupdate belum jalan
                             function (array $data, Get $get, Model $record, Set $set): array {
-
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
 
                                 // dd($data, $record);
                                 $oldType = $get('typeHidden');
                                 $newType = $get('type');
-                                $waste = Waste::where('id', $data['waste_id'])->first();
+                                $waste = Waste::find($data['waste_id']);
 
                                 // Rollback stok berdasarkan data lama
                                 if ($oldType === TransactionType::PURCHASE->value) {
