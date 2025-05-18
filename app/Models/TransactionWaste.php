@@ -16,6 +16,24 @@ class TransactionWaste extends Pivot
         'sub_total_price'
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (TransactionWaste $detail) {
+            $transaction = $detail->transaction()->first();
+            $waste = $detail->waste()->first();
+
+            if (!$transaction || !$waste) return;
+
+            if ($transaction->type === 'purchase') {
+                $waste->stock_in_kg -= $detail->qty_in_kg;
+            } else {
+                $waste->stock_in_kg += $detail->qty_in_kg;
+            }
+
+            $waste->save();
+        });
+    }
+
     public function waste(): BelongsTo
     {
         return $this->belongsTo(Waste::class);

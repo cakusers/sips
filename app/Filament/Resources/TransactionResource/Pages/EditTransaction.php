@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\TransactionResource\Pages;
 
-use App\Enums\TransactionType;
-use App\Filament\Resources\TransactionResource;
-use App\Models\Customer;
 use Filament\Actions;
+use App\Models\Customer;
+use App\Enums\TransactionType;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\TransactionResource;
 
 class EditTransaction extends EditRecord
 {
@@ -33,12 +34,25 @@ class EditTransaction extends EditRecord
         return $data;
     }
 
-
-
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->before(function (Model $record) {
+                $record->load('transactionWastes.waste');
+
+                foreach ($record->transactionWastes as $detail) {
+
+                    $waste = $detail->waste;
+
+                    if ($record->type === TransactionType::SELL->value) {
+                        $waste->stock_in_kg += $detail->qty_in_kg;
+                    } else {
+                        $waste->stock_in_kg -= $detail->qty_in_kg;
+                    }
+
+                    $waste->save();
+                }
+            }),
         ];
     }
 }

@@ -26,6 +26,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class WasteResource extends Resource
 {
@@ -99,41 +100,39 @@ class WasteResource extends Resource
                                 ->dehydrated(),
                         ])->columnSpan(1),
 
+                        // TODO: Membuat Stok editable
                         Section::make()->schema([
                             TextInput::make('stock_in_kg')
                                 ->label('Stok Saat Ini')
                                 ->readOnly()
                                 ->default(0)
                                 ->suffix('Kg')
-                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok saat ini tidak bisa diisi, akan bertambah/berkurang bila transaksi dilaksanakan')
-                                ->dehydrated(false)
-                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
-
-                            TextInput::make('min_stock_in_kg')
-                                ->label('Stok Minimal')
-                                ->default(0)
-                                ->required()
-                                ->suffix('Kg')
-                                ->live(onBlur: true)
-                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok minimum pada gudang. Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
-                                ->regex('/^(\d+|\d+,\d+)$/')
-                                ->validationMessages([
-                                    'regex' => 'Kolom harus berisi angka'
-                                ])
                                 ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
-                                ->afterStateUpdated(
-                                    function (Livewire $livewire, $component) {
-                                        $livewire->addMessagesFromOutside([
-                                            'regex' => 'Kolom harus berisi angka'
-                                        ]);
-                                        $livewire->validateOnly($component->getStatePath());
-                                    }
-                                )
-                                ->dehydrateStateUsing(
-                                    fn($state) => (float) str_replace(',', '.', $state)
-                                )
+                                ->helperText(new HtmlString('<span style="color:#ee9405">Hati-hati dalam memasukkan Stok secara manual.</span><br>Stok akan otomatis berubah bila transaksi dilakukan.')),
 
-
+                            // TextInput::make('min_stock_in_kg')
+                            //     ->label('Stok Minimal')
+                            //     ->default(0)
+                            //     ->required()
+                            //     ->suffix('Kg')
+                            //     ->live(onBlur: true)
+                            //     ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok minimum pada gudang. Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
+                            //     ->regex('/^(\d+|\d+,\d+)$/')
+                            //     ->validationMessages([
+                            //         'regex' => 'Kolom harus berisi angka'
+                            //     ])
+                            //     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                            //     ->afterStateUpdated(
+                            //         function (Livewire $livewire, $component) {
+                            //             $livewire->addMessagesFromOutside([
+                            //                 'regex' => 'Kolom harus berisi angka'
+                            //             ]);
+                            //             $livewire->validateOnly($component->getStatePath());
+                            //         }
+                            //     )
+                            //     ->dehydrateStateUsing(
+                            //         fn($state) => (float) str_replace(',', '.', $state)
+                            //     )
 
                         ])->columnSpan(1),
                         Section::make()->schema([
@@ -155,13 +154,12 @@ class WasteResource extends Resource
                     ->label('Nama')
                     ->sortable()
                     ->searchable(),
-                // ImageColumn::make('img')
-                //     ->label('Gambar')
-                //     ->visibility('private'),
+                ImageColumn::make('img')
+                    ->label('Gambar')
+                    ->visibility('private'),
                 TextColumn::make('wasteCategory.name')
                     ->label('Kategori')
                     ->sortable(),
-
                 TextColumn::make('latestPrice.purchase_per_kg')
                     ->label('Harga Beli')
                     ->numeric()
@@ -176,12 +174,7 @@ class WasteResource extends Resource
                     ->label('Stok Tersedia')
                     ->suffix(' Kg')
                     ->color(fn(string $state) => $state === '0' ? 'danger' : ''),
-                // TextColumn::make('min_stock_in_kg')
-                //     ->label('Keterangan')
-                //     ->state(function (Waste $record): bool {
-                //         return $record->stock_in_kg > $record->min_stock_in_kg;
-                //     })
-                //     ->formatStateUsing(fn(string $state) => $state ? 'Ya' : 'Tidak'),
+
             ])
             ->filters([
                 SelectFilter::make('Kategori')->relationship('wasteCategory', 'name')

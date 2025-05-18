@@ -68,6 +68,7 @@ class TransactionResource extends Resource
 
                     Select::make('typeHidden')
                         ->hidden()
+                        ->disabled()
                         ->options(self::$transactionType),
 
                     Select::make('customer_id')
@@ -112,6 +113,7 @@ class TransactionResource extends Resource
                         ->label('Sampah Yang Dipilih')
                         ->relationship()
                         ->addActionLabel('Tambahkan Sampah yang dipilih')
+                        ->minItems(1)
                         ->schema([
                             Select::make('waste_id')
                                 ->relationship('waste', 'name')
@@ -142,6 +144,7 @@ class TransactionResource extends Resource
                                         $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
 
                                         $qtyInFloat = (float) str_replace(',', '.', $get('qty_in_kg'));
+
                                         $set('sub_total_sell', number_format($qtyInFloat * $price->selling_per_kg,  0, ',', '.'));
                                         $set('sub_total_purchase', number_format($qtyInFloat * $price->purchase_per_kg,  0, ',', '.'));
                                     }
@@ -159,7 +162,6 @@ class TransactionResource extends Resource
                                 ->required()
                                 ->rules([
                                     fn(Get $get, string $operation, ?Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $operation, $record) {
-                                        // dd($record);
 
                                         $quantity = (float) str_replace(',', '.', $value);
                                         $availableStock = (float) str_replace(',', '.', $get('stock_in_kg'));
@@ -182,16 +184,19 @@ class TransactionResource extends Resource
                                             $oldType = $get('../../typeHidden');
                                             $newType = $get('../../type');
 
-                                            if ($oldType === TransactionType::SELL->value) {
-                                                $availableStock += $record->qty_in_kg;
+                                            if (isset($record)) {
+                                                if ($oldType === TransactionType::SELL->value) {
+                                                    $availableStock += $record->qty_in_kg;
+                                                } else {
+                                                    $availableStock -= $record->qty_in_kg;
+                                                }
                                             }
 
                                             if ($newType === TransactionType::SELL->value) {
-                                                // dd($availableStock);
-                                                if ($availableStock <= $value) {
+                                                if ($availableStock < $value) {
+                                                    // dd($availableStock, $value);
                                                     $fail('Stok tidak cukup untuk penjualan');
                                                 }
-                                                $availableStock -= $value;
                                             }
                                         }
                                     }
@@ -200,13 +205,14 @@ class TransactionResource extends Resource
                                 ->afterStateUpdated(
                                     function (Livewire $livewire, $component, Get $get, Set $set, ?string $state) {
                                         // Live validation: true
-                                        // $livewire
-                                        //     ->addMessagesFromOutside([
-                                        //         'regex' => 'Kolom harus berisi angka'
-                                        //     ]);
-                                        // $livewire->validateOnly($component->getStatePath());
+                                        $livewire
+                                            ->addMessagesFromOutside([
+                                                'regex' => 'Kolom harus berisi format angka yang sesuai'
+                                            ]);
+                                        $livewire->validateOnly($component->getStatePath());
 
                                         $qtyInFloat = (float) str_replace(',', '.', $state);
+                                        // logger([$state, $qtyInFloat]);
 
                                         $sellPrice = (int) str_replace('.', '', $get('selling_price'));
                                         $set('sub_total_sell', number_format($sellPrice * $qtyInFloat, 0, ',', '.'));
@@ -270,19 +276,27 @@ class TransactionResource extends Resource
                         )
                         ->deleteAction(
                             function (Action $action) {
-                                $action->after(function (Set $set, $state) {
-                                    $collection = collect($state);
-                                    $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-                                    $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                                $action
+                                    ->requiresConfirmation()
+                                    // ->before(function ($state, array $arguments) {
+                                    //     $key = $arguments['item'];
+                                    //     $record = $state[$key];
+                                    //     dd($record);
+                                    // })
+                                    ->after(function (Set $set, $state) {
 
-                                    $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
-                                    $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
-                                });
+                                        $collection = collect($state);
+                                        $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+                                        $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
+
+                                        $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
+                                        $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
+                                    });
                             },
                         )
                         ->mutateRelationshipDataBeforeCreateUsing(
                             function (array $data, Get $get): array {
-                                // dd($data);
+
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
 
                                 if ($get('type') === TransactionType::SELL->value) {
@@ -315,7 +329,8 @@ class TransactionResource extends Resource
                         )
                         ->mutateRelationshipDataBeforeSaveUsing(
                             // TODO : Logika Stok ketikda diupdate belum jalan
-                            function (array $data, Get $get, Model $record, Set $set): array {
+                            function (?array $data, Get $get, Model $record, Set $set): array {
+
                                 $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
 
                                 // dd($data, $record);
@@ -412,7 +427,22 @@ class TransactionResource extends Resource
             ->actions([
                 ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                DeleteAction::make()
+                DeleteAction::make()->before(function (Model $record) {
+                    $record->load('transactionWastes.waste');
+
+                    foreach ($record->transactionWastes as $detail) {
+
+                        $waste = $detail->waste;
+
+                        if ($record->type === TransactionType::SELL->value) {
+                            $waste->stock_in_kg += $detail->qty_in_kg;
+                        } else {
+                            $waste->stock_in_kg -= $detail->qty_in_kg;
+                        }
+
+                        $waste->save();
+                    }
+                })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
