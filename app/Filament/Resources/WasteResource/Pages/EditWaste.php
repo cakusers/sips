@@ -32,8 +32,10 @@ class EditWaste extends EditRecord
             'waste_id' => $record->id,
             'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
             'selling_per_kg' => $this->form->getState()['selling_per_kg'],
-            'min_stock_in_kg' => $data['min_stock_in_kg']
+            // 'min_stock_in_kg' => $data['min_stock_in_kg']
         ]);
+
+        $this->dispatch('refreshHistori');
 
         return $record;
     }

@@ -5,6 +5,8 @@ namespace App\Filament\Resources\WasteResource\RelationManagers;
 
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Livewire\Attributes\On;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -13,6 +15,10 @@ use Filament\Resources\RelationManagers\RelationManager;
 class WastePricesRelationManager extends RelationManager
 {
     protected static string $relationship = 'wastePrices';
+
+    protected $listeners = [
+        'refreshHistori' => '$refresh',
+    ];
 
     public function form(Form $form): Form
     {
@@ -30,7 +36,7 @@ class WastePricesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Tanggal')
-                    ->date('D M Y')
+                    ->date('d M Y')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('purchase_per_kg')
@@ -47,9 +53,7 @@ class WastePricesRelationManager extends RelationManager
             ->filters([
                 //
             ])
-            ->headerActions([
-                //
-            ])
+            ->headerActions([])
             ->actions([
                 //
             ])

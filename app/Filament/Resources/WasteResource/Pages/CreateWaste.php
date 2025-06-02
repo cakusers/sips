@@ -31,7 +31,7 @@ class CreateWaste extends CreateRecord
             'name' => $data['name'],
             'img' => $data['img'],
             'waste_category_id' => $data['waste_category_id'],
-            'min_stock_in_kg' => $data['min_stock_in_kg']
+            // 'min_stock_in_kg' => $data['min_stock_in_kg']
         ]);
 
         WastePrice::create([
