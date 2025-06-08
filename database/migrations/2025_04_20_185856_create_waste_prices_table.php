@@ -19,6 +19,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->cascadeOnDelete();
+            $table->timestamp('effective_start_date')->useCurrent();
             $table->timestamps();
         });
     }

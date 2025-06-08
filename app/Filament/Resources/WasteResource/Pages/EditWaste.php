@@ -23,9 +23,16 @@ class EditWaste extends EditRecord
         return $data;
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['stock_in_kg'] = (float) str_replace(',', '.', $data['stock_in_kg']);
+        return $data;
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        // dd($record->id);
+
+        // dd([$record, $data]);
         $record->update($data);
 
         WastePrice::create([

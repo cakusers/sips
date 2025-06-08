@@ -15,17 +15,24 @@ class CustomerSeeder extends Seeder
     {
         $customers = [
             [
-                'name' => 'Abram Widi Firmanto',
+                'name' => 'Ironik',
                 'phone' => '09782316893',
                 'email' => '',
                 'address' => 'Jl. Kediri Ke Dara',
                 'descriptions' => '',
             ],
             [
-                'name' => 'Nicholas Noel Christianto',
+                'name' => 'Kupo',
                 'phone' => '08582316111',
-                'email' => 'ininowel@gmail.com',
-                'address' => 'Jl. Anomali Ban Ban Bandung',
+                'email' => 'kupokupo@gmail.com',
+                'address' => 'Jl. Anomali sahur',
+                'descriptions' => '',
+            ],
+            [
+                'name' => 'Sora',
+                'phone' => '08582316111',
+                'email' => 'kan@gmail.com',
+                'address' => 'Jl. Anomali Lirili',
                 'descriptions' => '',
             ],
         ];

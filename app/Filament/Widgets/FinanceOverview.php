@@ -36,19 +36,34 @@ class FinanceOverview extends BaseWidget
     private function getProfitPeriode(Carbon $startDate, Carbon $endDate): float
     {
         $profit = Transaction::query()
-            ->join('transaction_waste', 'transactions.id', '=', 'transaction_waste.transaction_id')
-            ->join('waste_prices', 'transaction_waste.waste_id', '=', 'waste_prices.waste_id')
-            ->where('transactions.type', TransactionType::SELL->value)
-            ->where('transactions.status', TransactionStatus::COMPLETE->value)
-            ->whereBetween('transactions.created_at', [$startDate, $endDate])
-            ->selectRaw('SUM(transaction_waste.sub_total_price - (transaction_waste.qty_in_kg * waste_prices.purchase_per_kg)) as total_profit')
+            ->from('transactions as t') // Alias untuk tabel transactions
+            ->join('transaction_waste as tw', 't.id', '=', 'tw.transaction_id')
+            ->where('t.type', TransactionType::SELL->value)
+            ->where('t.status', TransactionStatus::COMPLETE->value) // Hanya transaksi selesai
+            ->whereBetween('t.created_at', [$startDate, $endDate])
+            ->selectRaw(
+                // Menghitung laba kotor: Harga Jual Item - (Kuantitas Item * Harga Beli Historis Item)
+                // Jika subkueri untuk harga beli historis mengembalikan NULL (tidak ditemukan),
+                // maka seluruh ekspresi untuk item tersebut akan menjadi NULL,
+                // dan SUM() akan mengabaikan item tersebut dalam penjumlahan total profit.
+                'SUM(tw.sub_total_price - (tw.qty_in_kg * (
+                SELECT wp.purchase_per_kg
+                FROM waste_prices wp
+                WHERE wp.waste_id = tw.waste_id
+                  AND wp.effective_start_date <= t.created_at
+                ORDER BY
+                    wp.effective_start_date DESC,
+                    wp.id DESC
+                LIMIT 1
+            ))) as total_profit'
+            )
             ->value('total_profit');
         return (float) ($profit ?? 0.0);
     }
 
     protected function getStats(): array
     {
-        Carbon::setTestNow(Carbon::create(2025, 6, 16, 10, 0, 0));
+        Carbon::setTestNow(Carbon::create(2025, 4, 1, 10, 0, 0));
 
         try {
             // --- Tanggal ---
