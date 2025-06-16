@@ -15,21 +15,21 @@ class CustomerSeeder extends Seeder
     {
         $customers = [
             [
-                'name' => 'Ironik',
+                'name' => 'Nowel',
                 'phone' => '09782316893',
                 'email' => '',
                 'address' => 'Jl. Kediri Ke Dara',
                 'descriptions' => '',
             ],
             [
-                'name' => 'Kupo',
+                'name' => 'Wiwi',
                 'phone' => '08582316111',
-                'email' => 'kupokupo@gmail.com',
+                'email' => 'wiwi@gmail.com',
                 'address' => 'Jl. Anomali sahur',
                 'descriptions' => '',
             ],
             [
-                'name' => 'Sora',
+                'name' => 'Abram',
                 'phone' => '08582316111',
                 'email' => 'kan@gmail.com',
                 'address' => 'Jl. Anomali Lirili',

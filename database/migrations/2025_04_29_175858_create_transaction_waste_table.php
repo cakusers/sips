@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('transaction_waste', function (Blueprint $table) {
             $table->id();
             $table->foreignId('waste_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->float('qty_in_kg');
-            $table->integer('sub_total_price');
             $table->foreignId('transaction_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->float('qty_in_kg');
+            $table->integer('unit_price');
+            $table->integer('sub_total_price');
             $table->timestamps();
         });
     }

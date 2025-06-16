@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use Closure;
+use Dom\Text;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Waste;
@@ -9,13 +11,16 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use App\Models\Customer;
 use Filament\Forms\Form;
+use App\Models\WastePrice;
 use Filament\Tables\Table;
 use App\Models\Transaction;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
 use Livewire\Component as Livewire;
 use Filament\Forms\Components\Select;
+use Filament\Support\Enums\Alignment;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
@@ -24,7 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\DeleteAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -32,14 +37,11 @@ use Filament\Forms\Components\Actions\Action;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-use Closure;
 
 class TransactionResource extends Resource
 {
     protected static ?string $model = Transaction::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
-
     protected static ?string $label = 'Transaksi';
 
     protected static array $transactionType = [
@@ -59,61 +61,129 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()->schema([
-                    Forms\Components\Select::make('type')
-                        ->label('Tipe Transaksi')
-                        ->options(self::$transactionType)
-                        ->required()
-                        ->live(),
+                Section::make('Informasi Transaksi')
+                    ->schema([
+                        Forms\Components\Select::make('type')
+                            ->label('Tipe Transaksi')
+                            ->options(self::$transactionType)
+                            ->disabled(fn($operation) => $operation === 'edit')
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
 
-                    Select::make('typeHidden')
-                        ->hidden()
-                        ->disabled()
-                        ->options(self::$transactionType),
+                                // Ambil semua item yang ada di repeater
+                                $items = $get('transactionWastes');
 
-                    Select::make('customer_id')
-                        ->label('Pelanggan')
-                        ->relationship('customer', 'name')
-                        ->required()
-                        ->searchable()
-                        ->preload()
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(fn(Set $set, $state) => $state !== null ? $set('address', (Customer::where('id', $state)->first()->address)) : $set('address', ''))
-                        ->createOptionForm([
-                            Section::make()->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nama')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('No. Telepon')
-                                    ->placeholder('081xxxxxxxxxx')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(20),
-                                Forms\Components\TextInput::make('email')
-                                    ->email()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('address')
-                                    ->label('Alamat')
-                                    ->required(),
-                                Textarea::make('decription')
-                                    ->label('Deskripsi')
-                                    ->columnSpanFull(),
-                            ])
-                        ]),
+                                if (!is_array($items) || empty($items)) {
+                                    return;
+                                }
 
-                    Select::make('status')
-                        ->options(self::$transactionStatus)
-                        ->default(TransactionStatus::NEW)
-                ])->columns(3),
+                                $updatedItems = [];
+                                $totalPrice = 0;
+                                $transactionDate = now();
 
-                Section::make()->schema([
+                                foreach ($items as $key => $itemData) {
+                                    $wasteId = $itemData['waste_id'];
+                                    $qty = (float) str_replace(',', '.', $itemData['qty_in_kg'] ?? '0');
+
+                                    // Jika item tersebut sudah memiliki pilihan sampah
+                                    if ($wasteId) {
+                                        // Ambil harga master yang relevan
+                                        $priceRecord = WastePrice::query()
+                                            ->where('waste_id', $wasteId)
+                                            ->where('effective_start_date', '<=', $transactionDate)
+                                            ->latest('effective_start_date')->first();
+
+                                        $newUnitPrice = 0;
+                                        if ($priceRecord) {
+                                            // Tentukan harga satuan baru berdasarkan TIPE TRANSAKSI yang baru
+                                            $newUnitPrice = ($state === TransactionType::SELL->value)
+                                                ? $priceRecord->selling_per_kg
+                                                : $priceRecord->purchase_per_kg;
+                                        }
+
+                                        // Perbarui data untuk item ini
+                                        $itemData['unit_price'] = $newUnitPrice;
+                                        $itemData['sub_total_price'] = $qty * $newUnitPrice;
+                                    }
+
+                                    $updatedItems[$key] = $itemData;
+                                    $totalPrice += (float) ($itemData['sub_total_price'] ?? 0);
+                                }
+
+                                $set('transactionWastes', $updatedItems);
+                                $set('total_price', $totalPrice);
+                            }),
+
+                        Select::make('customer_id')
+                            ->label('Pelanggan')
+                            ->relationship('customer', 'name')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live(onBlur: true)
+                            ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                            ->afterStateUpdated(fn(Set $set, $state) => $state !== null ? $set('address', (Customer::where('id', $state)->first()->address)) : $set('address', ''))
+                            ->createOptionForm([
+                                Section::make()->schema([
+                                    Forms\Components\TextInput::make('name')
+                                        ->label('Nama')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('phone')
+                                        ->label('No. Telepon')
+                                        ->placeholder('081xxxxxxxxxx')
+                                        ->tel()
+                                        ->required()
+                                        ->maxLength(20),
+                                    Forms\Components\TextInput::make('email')
+                                        ->email()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('address')
+                                        ->label('Alamat')
+                                        ->required(),
+                                    Textarea::make('decription')
+                                        ->label('Deskripsi')
+                                        ->columnSpanFull(),
+                                ])
+                            ]),
+
+                        Select::make('payment_status')
+                            ->label('Status Pembayaran')
+                            ->required()
+                            ->default(PaymentStatus::UNPAID->value)
+                            ->options([
+                                PaymentStatus::PAID->value => 'Lunas',
+                                PaymentStatus::UNPAID->value => 'Belum Lunas'
+                            ]),
+                        TextInput::make('status')
+                            ->default(TransactionStatus::NEW->value)
+                            ->readOnly()
+                            ->dehydrated(false)
+                            ->formatStateUsing(
+                                fn($state): string => match ($state) {
+                                    TransactionStatus::NEW->value => 'Baru',
+                                    TransactionStatus::COMPLETE->value => 'Selesai',
+                                    TransactionStatus::DELIVERED->value => 'Dikirimkan',
+                                    TransactionStatus::CANCELED->value => 'Dibatalkan',
+                                    TransactionStatus::RETURNED->value => 'Dikembalikan',
+                                }
+                            )
+                    ])->columns(4),
+
+                Section::make('Detail Sampah')->schema([
                     Repeater::make('transactionWastes')
-                        ->label('Sampah Yang Dipilih')
+                        ->label(false)
                         ->relationship()
                         ->addActionLabel('Tambahkan Sampah yang dipilih')
                         ->minItems(1)
+                        ->columns(5)
+                        ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                        ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
+                            $data['stock_in_kg'] = Waste::find($data['waste_id'])->stock_in_kg;
+
+                            return $data;
+                        })
                         ->schema([
                             Select::make('waste_id')
                                 ->relationship('waste', 'name')
@@ -125,103 +195,48 @@ class TransactionResource extends Resource
                                 ->afterStateUpdated(
                                     function (Get $get, Set $set, ?string $state) {
 
-                                        if ($state === null) {
-                                            $set('selling_price', 0);
-                                            $set('purchase_price', 0);
-                                            $set('stock_in_kg', 0);
-                                            $set('sub_total_sell', $get('qty_in_kg') * 0);
-                                            $set('sub_total_purchase', $get('qty_in_kg') * 0);
+                                        if (blank($state)) {
+                                            $set('unit_price', 0);
                                             return;
                                         }
 
-                                        $waste = Waste::find($state);
+                                        $transactionDate = $get('../../created_at') ?? now();
 
-                                        $set('stock_in_kg', str_replace('.', ',', $waste->stock_in_kg));
+                                        $waste = Waste::where('id', $state)
+                                            ->with(['wastePrices' => function ($query) use ($transactionDate) {
+                                                $query->where('effective_start_date', '<=', $transactionDate)
+                                                    ->latest('effective_start_date');
+                                            }])
+                                            ->first();
 
-                                        $price = $waste->latestPrice;
+                                        $price = $waste->wastePrices->first();
 
-                                        $set('selling_price', number_format($price->selling_per_kg, 0, ',', '.'));
-                                        $set('purchase_price', number_format($price->purchase_per_kg, 0, ',', '.'));
+                                        $set('stock_in_kg', $waste->stock_in_kg);
 
-                                        $qtyInFloat = (float) str_replace(',', '.', $get('qty_in_kg'));
-
-                                        $set('sub_total_sell', number_format($qtyInFloat * $price->selling_per_kg,  0, ',', '.'));
-                                        $set('sub_total_purchase', number_format($qtyInFloat * $price->purchase_per_kg,  0, ',', '.'));
+                                        if ($price) {
+                                            $transactionType = $get('../../type');
+                                            $unitPrice = ($transactionType === TransactionType::SELL->value)
+                                                ? $price->selling_per_kg
+                                                : $price->purchase_per_kg;
+                                            $set('unit_price', $unitPrice);
+                                        }
                                     }
                                 ),
 
                             TextInput::make('qty_in_kg')
                                 ->label('Berat (Kg)')
                                 ->default(0)
-                                ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
-                                ->suffix('Kg')
-                                ->regex('/^(\d+|\d+,\d+)$/')
-                                ->validationMessages([
-                                    'regex' => 'Kolom harus berisi format angka yang sesuai'
-                                ])
                                 ->required()
-                                ->rules([
-                                    fn(Get $get, string $operation, ?Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $operation, $record) {
-
-                                        $quantity = (float) str_replace(',', '.', $value);
-                                        $availableStock = (float) str_replace(',', '.', $get('stock_in_kg'));
-
-                                        if ($quantity <= 0) {
-                                            $fail('Berisi minimal 0,1 Kg');
-                                        }
-
-                                        if ($operation === 'create') {
-
-                                            if ($get('../../type') === TransactionType::SELL->value) {
-                                                if ($availableStock < $quantity) {
-                                                    $fail('Stok tidak cukup untuk penjualan');
-                                                }
-                                            }
-                                        }
-
-                                        if ($operation === 'edit') {
-
-                                            $oldType = $get('../../typeHidden');
-                                            $newType = $get('../../type');
-
-                                            if (isset($record)) {
-                                                if ($oldType === TransactionType::SELL->value) {
-                                                    $availableStock += $record->qty_in_kg;
-                                                } else {
-                                                    $availableStock -= $record->qty_in_kg;
-                                                }
-                                            }
-
-                                            if ($newType === TransactionType::SELL->value) {
-                                                if ($availableStock < $value) {
-                                                    // dd($availableStock, $value);
-                                                    $fail('Stok tidak cukup untuk penjualan');
-                                                }
-                                            }
-                                        }
-                                    }
-                                ])
+                                ->suffix('Kg')
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(
-                                    function (Livewire $livewire, $component, Get $get, Set $set, ?string $state) {
-                                        // Live validation: true
-                                        $livewire
-                                            ->addMessagesFromOutside([
-                                                'regex' => 'Kolom harus berisi format angka yang sesuai'
-                                            ]);
-                                        $livewire->validateOnly($component->getStatePath());
-
-                                        $qtyInFloat = (float) str_replace(',', '.', $state);
-                                        // logger([$state, $qtyInFloat]);
-
-                                        $sellPrice = (int) str_replace('.', '', $get('selling_price'));
-                                        $set('sub_total_sell', number_format($sellPrice * $qtyInFloat, 0, ',', '.'));
-
-                                        $purchasePrice = (int) str_replace('.', '', $get('purchase_price'));
-                                        $set('sub_total_purchase', number_format($purchasePrice * $qtyInFloat, 0, ',', '.'));
+                                    function (Get $get, Set $set, $state) {
+                                        $qty = (float) str_replace(',', '.', $state ?? '0');
+                                        $unitPrice = (int) $get('unit_price');
+                                        $set('sub_total_price', $qty * $unitPrice);
                                     }
-                                )
-                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
+                                ),
+                            // ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
 
                             TextInput::make('stock_in_kg')
                                 ->label('Stok Tersedia')
@@ -229,160 +244,41 @@ class TransactionResource extends Resource
                                 ->default(0)
                                 ->readOnly(),
 
-                            TextInput::make('selling_price')
-                                ->label('Harga Jual/Kg')
-                                ->prefix('Rp')
-                                ->default(0)
-                                ->readOnly()
-                                ->dehydrated(false)
-                                ->live()
-                                ->afterStateUpdated(fn($state) => dd($state))
-                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
-                            TextInput::make('purchase_price')
-                                ->label('Harga Beli/Kg')
-                                ->prefix('Rp')
-                                ->default(0)
-                                ->readOnly()
-                                ->dehydrated(false)
-                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
+                            TextInput::make('unit_price')
+                                ->label(fn(Get $get): string => ($get('../../type') === TransactionType::SELL->value) ? 'Harga Jual/Kg' : 'Harga Beli/Kg')
+                                ->numeric()->required()->prefix('Rp')
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                    $qty = (float) str_replace(',', '.', $get('qty_in_kg') ?? '0');
+                                    $unitPrice = (int) $state;
+                                    $set('sub_total_price', $qty * $unitPrice);
+                                }),
 
-
-                            TextInput::make('sub_total_sell')
+                            TextInput::make('sub_total_price')
                                 ->label('Sub Total')
-                                ->prefix('Rp')
-                                ->default(0)
-                                ->readOnly()
-                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::SELL->value),
-
-                            TextInput::make('sub_total_purchase')
-                                ->label('Sub Total')
-                                ->prefix('Rp')
-                                ->default(0)
-                                ->readOnly()
-                                ->visible(fn(Get $get) => $get('../../type') === TransactionType::PURCHASE->value),
-
+                                ->numeric()->required()->prefix('Rp')
+                                ->readOnly(),
                         ])
-                        ->live()
-                        ->columns(5)
                         ->addAction(
-                            function ($state, Set $set) {
-                                $collection = collect($state);
-                                $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-                                $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-
-                                $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
-                                $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
-                            }
+                            fn(Get $get, Set $set) => self::updateTotalPrice($get, $set)
                         )
                         ->deleteAction(
-                            function (Action $action) {
-                                $action
-                                    ->requiresConfirmation()
-                                    // ->before(function ($state, array $arguments) {
-                                    //     $key = $arguments['item'];
-                                    //     $record = $state[$key];
-                                    //     dd($record);
-                                    // })
-                                    ->after(function (Set $set, $state) {
-
-                                        $collection = collect($state);
-                                        $totalSell = $collection->pluck('sub_total_sell')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-                                        $totalPurchase = $collection->pluck('sub_total_purchase')->map(fn($item) => (int) str_replace('.', '', $item))->sum();
-
-                                        $set('total_price_sell', number_format($totalSell, 0, ',', '.'));
-                                        $set('total_price_purchase', number_format($totalPurchase, 0, ',', '.'));
-                                    });
-                            },
+                            fn(Action $action) => $action->after(fn(Get $get, Set $set) => self::updateTotalPrice($get, $set))
                         )
-                        ->mutateRelationshipDataBeforeCreateUsing(
-                            function (array $data, Get $get): array {
 
-                                $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
-
-                                if ($get('type') === TransactionType::SELL->value) {
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
-                                    Waste::where('id', $data['waste_id'])->first()->decrement('stock_in_kg', $data['qty_in_kg']);
-                                } else {
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
-                                    Waste::where('id', $data['waste_id'])->first()->increment('stock_in_kg', $data['qty_in_kg']);
-                                }
-
-                                return $data;
-                            }
-                        )
-                        ->mutateRelationshipDataBeforeFillUsing(
-                            function (array $data): array {
-
-                                $waste = Waste::find($data['waste_id']);
-                                $price = $waste->latestPrice;
-
-                                $data['selling_price'] = number_format($price->selling_per_kg, 0, ',', '.');
-                                $data['sub_total_sell'] = number_format($price->selling_per_kg * $data['qty_in_kg'], 0, ',', '.');
-
-                                $data['purchase_price'] = number_format($price->purchase_per_kg, 0, ',', '.');
-                                $data['sub_total_purchase'] = number_format($price->purchase_per_kg * $data['qty_in_kg'], 0, ',', '.');
-
-                                $data['stock_in_kg'] = str_replace('.', ',', $waste->stock_in_kg);
-
-                                return $data;
-                            }
-                        )
-                        ->mutateRelationshipDataBeforeSaveUsing(
-                            // TODO : Logika Stok ketikda diupdate belum jalan
-                            function (?array $data, Get $get, Model $record, Set $set): array {
-
-                                $data['qty_in_kg'] = (float) str_replace(',', '.', $data['qty_in_kg']);
-
-                                // dd($data, $record);
-                                $oldType = $get('typeHidden');
-                                $newType = $get('type');
-                                $waste = Waste::find($data['waste_id']);
-
-                                // Rollback stok berdasarkan data lama
-                                if ($oldType === TransactionType::PURCHASE->value) {
-                                    $waste->stock_in_kg -= $record->qty_in_kg;
-                                } else {
-                                    $waste->stock_in_kg += $record->qty_in_kg;
-                                }
-
-                                // Penghitungan stok baru
-                                $set('typeHidden', $newType);
-                                if ($newType === TransactionType::PURCHASE->value) {
-                                    $waste->stock_in_kg += $data['qty_in_kg'];
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_purchase']);
-                                } else {
-                                    $waste->stock_in_kg -= $data['qty_in_kg'];
-                                    $data['sub_total_price'] = (int) str_replace('.', '', $data['sub_total_sell']);
-                                }
-
-                                $waste->save();
-
-                                return $data;
-                            }
-                        )
                 ]),
 
                 Section::make()->schema([
-                    Forms\Components\TextInput::make('total_price_sell')
+                    TextInput::make('total_price')
                         ->label('Harga Total')
-                        ->prefix('Rp')
-                        ->default(0)
+                        ->prefix('Rp')->numeric()
                         ->readOnly()
-                        ->visible(fn(Get $get) => $get('type') === TransactionType::SELL->value || $get('type') === null),
-                    Forms\Components\TextInput::make('total_price_purchase')
-                        ->label('Harga Total')
-                        ->prefix('Rp')
-                        ->default(0)
-                        ->readOnly()
-                        ->visible(fn(Get $get) => $get('type') === TransactionType::PURCHASE->value),
-                ])->columnSpan(1),
-
-                Section::make()->schema([
+                        ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
                     TextInput::make('address')
                         ->label('Alamat Pelanggan')
-                        ->readOnly()
-                ])
-                    ->columnSpan(1),
+                        ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                        ->readOnly(),
+                ])->columns(2),
             ]);
     }
 
@@ -396,16 +292,53 @@ class TransactionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
+                    ->alignment(Alignment::Center)
                     ->formatStateUsing(fn($state) => $state === TransactionType::SELL->value ? 'Jual' : 'Beli')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga Total')
                     ->numeric()
                     ->sortable()
+                    ->alignment(Alignment::Center)
                     ->searchable(),
-                SelectColumn::make('status')
-                    ->label('Status Transaksi')
-                    ->options(self::$transactionStatus),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->alignment(Alignment::Center)
+                    ->color(
+                        fn($state): string => match ($state) {
+                            TransactionStatus::NEW => 'info',
+                            TransactionStatus::COMPLETE => 'success',
+                            TransactionStatus::DELIVERED => 'darkBlue',
+                            TransactionStatus::CANCELED => 'danger',
+                            TransactionStatus::RETURNED => 'purple',
+                        }
+                    )
+                    ->formatStateUsing(
+                        fn($state): string => match ($state) {
+                            TransactionStatus::NEW => 'Baru',
+                            TransactionStatus::COMPLETE => 'Selesai',
+                            TransactionStatus::DELIVERED => 'Dikirimkan',
+                            TransactionStatus::CANCELED => 'Dibatalkan',
+                            TransactionStatus::RETURNED => 'Dikembalikan',
+                        }
+                    ),
+
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label("Status Pembayaran")
+                    ->badge()
+                    ->alignment(Alignment::Center)
+                    ->color(
+                        fn($state): string => match ($state) {
+                            PaymentStatus::PAID => 'success',
+                            PaymentStatus::UNPAID => 'danger',
+                        }
+                    )
+                    ->formatStateUsing(
+                        fn($state): string => match ($state) {
+                            PaymentStatus::PAID => 'Lunas',
+                            PaymentStatus::UNPAID => 'Belum Lunas',
+                        }
+                    ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dilakukan Pada')
                     ->dateTime('j F o, H.i')
@@ -425,28 +358,60 @@ class TransactionResource extends Resource
                     ->options(self::$transactionStatus)
             ])
             ->actions([
-                ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                DeleteAction::make()->before(function (Model $record) {
-                    $record->load('transactionWastes.waste');
+                Tables\Actions\Action::make('complete')
+                    ->button()
+                    ->label('Selesai')
+                    ->icon('heroicon-s-check-circle')
+                    ->color('success')
+                    ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED)
+                    ->action(function (Transaction $record) {
+                        // Mengubah Stok dengan Observer.
+                        $record->status = TransactionStatus::COMPLETE;
+                        $record->save();
+                        Notification::make()->title('Transaksi ditandai Selesai')->success()->send();
+                    }),
 
-                    foreach ($record->transactionWastes as $detail) {
+                Tables\Actions\Action::make('deliver')
+                    ->button()
+                    ->label('Dikirim')
+                    ->color('info')
+                    ->icon('heroicon-s-truck')
+                    ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
+                    ->action(function (Transaction $record) {
+                        $record->status = TransactionStatus::DELIVERED;
+                        $record->save();
+                        Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
+                    }),
 
-                        $waste = $detail->waste;
+                Tables\Actions\Action::make('cancel')
+                    ->button()
+                    ->label('Batalkan')
+                    ->color('danger')
+                    ->icon('heroicon-s-x-circle')
+                    ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW || $transaction->status === TransactionStatus::DELIVERED)
+                    ->action(function (Transaction $record) {
+                        $record->status = TransactionStatus::CANCELED;
+                        $record->save();
+                        Notification::make()->title('Transaksi Dibatalkan')->success()->send();
+                    }),
 
-                        if ($record->type === TransactionType::SELL->value) {
-                            $waste->stock_in_kg += $detail->qty_in_kg;
-                        } else {
-                            $waste->stock_in_kg -= $detail->qty_in_kg;
-                        }
-
-                        $waste->save();
-                    }
-                })
+                Tables\Actions\Action::make('return')
+                    ->button()
+                    ->label('Pengembalian')
+                    ->color('amber')
+                    ->icon('heroicon-s-arrow-uturn-left')
+                    ->requiresConfirmation()
+                    ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::COMPLETE)
+                    ->action(function (Transaction $record) {
+                        // Mengubah Stok dengan Observer.
+                        $record->status = TransactionStatus::RETURNED;
+                        $record->save();
+                        Notification::make()->title('Pengembalian transaksi berhasil diproses')->success()->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -465,5 +430,22 @@ class TransactionResource extends Resource
             'create' => Pages\CreateTransaction::route('/create'),
             'edit' => Pages\EditTransaction::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Fungsi Helper untuk Update Total Price
+     */
+    private static function updateTotalPrice(Get $get, Set $set): void
+    {
+        $total = 0;
+        $items = $get('transactionWastes');
+
+        if (is_array($items)) {
+            foreach ($items as $item) {
+                $subTotalValue = (int) $item['sub_total_price'] ?? '0';
+                $total += $subTotalValue;
+            }
+        }
+        $set('total_price', $total);
     }
 }

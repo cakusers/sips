@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\TransactionResource\Pages;
 
-use App\Enums\TransactionType;
-use App\Filament\Resources\TransactionResource;
 use Filament\Actions;
+use App\Enums\TransactionType;
+use App\Enums\TransactionStatus;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\TransactionResource;
 
 class CreateTransaction extends CreateRecord
 {
@@ -13,15 +14,7 @@ class CreateTransaction extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // dd($data);
-        if ($data['type'] === TransactionType::SELL->value) {
-            $data['total_price'] = (int) str_replace('.', '', $data['total_price_sell']);
-        } else {
-            $data['total_price'] = (int) str_replace('.', '', $data['total_price_purchase']);
-        }
-
-
-
+        $data['status'] = TransactionStatus::NEW;
         return $data;
     }
 

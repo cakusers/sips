@@ -1,10 +1,11 @@
 <?php
 
-use App\Enums\TransactionStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use App\Enums\TransactionStatus;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -23,7 +24,13 @@ return new class extends Migration
                 TransactionStatus::RETURNED->value,
                 TransactionStatus::DELIVERED->value,
                 TransactionStatus::CANCELED->value
-            ])->default(TransactionStatus::NEW->value);
+            ])
+                ->default(TransactionStatus::NEW->value);
+            $table->enum('payment_status', [
+                PaymentStatus::UNPAID->value,
+                PaymentStatus::PAID->value
+            ])
+                ->default(PaymentStatus::UNPAID->value);
             $table->integer('total_price')->nullable();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
             $table->timestamps();

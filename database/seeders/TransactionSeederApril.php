@@ -64,6 +64,7 @@ class TransactionSeederApril extends Seeder
             'transaction_id' => $purchasApr1->id,
             'waste_id' => $botolPet->id,
             'qty_in_kg' => 10,
+            'unit_price' => $hargaBotolPet->purchase_per_kg,
             'sub_total_price' => $hargaBotolPet->purchase_per_kg * 10, //15000
             'created_at' => $apr1,
             'updated_at' => $apr1,
@@ -72,6 +73,7 @@ class TransactionSeederApril extends Seeder
             'transaction_id' => $purchasApr1->id,
             'waste_id' => $kardus->id,
             'qty_in_kg' => 5,
+            'unit_price' => $hargaKardus->purchase_per_kg,
             'sub_total_price' => $hargaKardus->purchase_per_kg * 5, //4000
             'created_at' => $apr1,
             'updated_at' => $apr1,
@@ -90,6 +92,7 @@ class TransactionSeederApril extends Seeder
             'transaction_id' => $sellApr2->id,
             'waste_id' => $botolPet->id,
             'qty_in_kg' => 10,
+            'unit_price' => $botolPet->selling_per_kg,
             'sub_total_price' => $hargaBotolPet->selling_per_kg * 10, //20000
             'created_at' => $apr2,
             'updated_at' => $apr2,
@@ -98,6 +101,7 @@ class TransactionSeederApril extends Seeder
             'transaction_id' => $sellApr2->id,
             'waste_id' => $kardus->id,
             'qty_in_kg' => 5,
+            'unit_price' => $hargaKardus->selling_per_kg,
             'sub_total_price' => $hargaKardus->selling_per_kg * 5, //6000
             'created_at' => $apr2,
             'updated_at' => $apr2,

@@ -36,7 +36,7 @@ class WastePricesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d M Y, H.m')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('purchase_per_kg')

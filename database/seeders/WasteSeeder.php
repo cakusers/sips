@@ -22,17 +22,17 @@ class WasteSeeder extends Seeder
 
         Waste::create([
             'name' => 'Botol PET Bening',
-            'stock_in_kg' => 100.5,
+            'stock_in_kg' => 0,
             'waste_category_id' => $plastikCategory->id,
         ]);
         Waste::create([
             'name' => 'Kardus Bekas',
-            'stock_in_kg' => 250.0,
+            'stock_in_kg' => 0,
             'waste_category_id' => $kertasCategory->id,
         ]);
         Waste::create([
             'name' => 'Kaleng Aluminium',
-            'stock_in_kg' => 50.75,
+            'stock_in_kg' => 0,
             'waste_category_id' => $logamCategory->id,
         ]);
     }

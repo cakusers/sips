@@ -31,6 +31,9 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => '#348bcb',
+                'purple' => Color::Purple,
+                'amber' => Color::Amber,
+                'darkBlue' => '#1c398e'
             ])
             ->darkMode(false)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

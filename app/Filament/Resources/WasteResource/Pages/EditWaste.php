@@ -13,6 +13,8 @@ class EditWaste extends EditRecord
 {
     protected static string $resource = WasteResource::class;
 
+    protected ?bool $hasDatabaseTransactions = true;
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         // dd($data);

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
+use App\Enums\TransactionType;
+use App\Enums\TransactionStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
@@ -14,6 +17,12 @@ class Transaction extends Model
         'total_price',
         'status',
         'customer_id'
+    ];
+
+    protected $casts = [
+        'status' => TransactionStatus::class,
+        'type' => TransactionType::class,
+        'payment_status' => PaymentStatus::class,
     ];
 
     public function customer(): BelongsTo

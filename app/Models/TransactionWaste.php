@@ -13,7 +13,8 @@ class TransactionWaste extends Pivot
         'waste_id',
         'transaction_id',
         'qty_in_kg',
-        'sub_total_price'
+        'sub_total_price',
+        'unit_price'
     ];
 
     protected static function booted(): void

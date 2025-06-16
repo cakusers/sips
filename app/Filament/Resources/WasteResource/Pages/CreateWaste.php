@@ -14,16 +14,7 @@ class CreateWaste extends CreateRecord
 {
     protected static string $resource = WasteResource::class;
 
-    // protected function getHeaderActions(): array
-    // {
-    //     return [
-    //         Action::make('back')
-    //             ->label('Kembali')
-    //             ->url(route('filament.admin.resources.wastes.index'))
-    //             ->icon('heroicon-m-arrow-left')
-    //             ->color('primary')
-    //     ];
-    // }
+    protected ?bool $hasDatabaseTransactions = true;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
