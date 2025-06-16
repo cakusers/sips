@@ -73,34 +73,14 @@ class WasteResource extends Resource
                             TextInput::make('purchase_per_kg')
                                 ->prefix('Rp')
                                 ->label('Harga Beli per Kg')
-                                ->mask(RawJs::make(<<< 'JS'
-                                    $money($input, ',')
-                                JS))
-                                ->stripCharacters('.')
-                                ->extraAlpineAttributes([
-                                    'x-ref' => 'input1',
-                                    'x-on:keyup' => '$refs.input1.blur(); $refs.input1.focus()'
-                                ])
-                                ->required()
-                                ->dehydrated(),
+                                ->required(),
 
                             TextInput::make('selling_per_kg')
                                 ->prefix('Rp')
                                 ->label('Harga Jual per Kg')
-                                ->mask(RawJs::make(<<< 'JS'
-                                    $money($input, ',')
-                                JS))
-                                ->stripCharacters('.')
-                                ->integer()
-                                ->extraAlpineAttributes([
-                                    'x-ref' => 'input2',
-                                    'x-on:keyup' => '$refs.input2.blur(); $refs.input2.focus()'
-                                ])
-                                ->required()
-                                ->dehydrated(),
+                                ->required(),
                         ])->columnSpan(1),
 
-                        // TODO: Membuat Stok editable
                         Section::make()->schema([
                             TextInput::make('stock_in_kg')
                                 ->label('Stok Saat Ini')

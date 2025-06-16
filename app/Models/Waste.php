@@ -17,10 +17,10 @@ class Waste extends Model
         'waste_category_id'
     ];
 
-    // public function latestPrice()
-    // {
-    //     return $this->hasOne(WastePrice::class)->latestOfMany();
-    // }
+    public function latestPrice()
+    {
+        return $this->hasOne(WastePrice::class)->latestOfMany();
+    }
 
     public function wasteCategory(): BelongsTo
     {

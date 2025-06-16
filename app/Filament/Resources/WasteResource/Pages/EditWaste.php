@@ -53,11 +53,6 @@ class EditWaste extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
-            // Action::make('back')
-            //     ->label('Kembali')
-            //     ->url(route('filament.admin.resources.wastes.index'))
-            //     ->icon('heroicon-m-arrow-left')
-            //     ->color('primary')
         ];
     }
 }
