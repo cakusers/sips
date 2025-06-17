@@ -87,8 +87,7 @@ class WasteResource extends Resource
                                 ->readOnly()
                                 ->default(0)
                                 ->suffix('Kg')
-                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
-                                ->helperText(new HtmlString('<span style="color:#ee9405">Hati-hati dalam memasukkan Stok secara manual.</span><br>Stok akan otomatis berubah bila transaksi dilakukan.')),
+                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
 
                             // TextInput::make('min_stock_in_kg')
                             //     ->label('Stok Minimal')
