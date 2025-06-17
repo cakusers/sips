@@ -16,6 +16,7 @@ class Transaction extends Model
         'type',
         'total_price',
         'status',
+        'payment_status',
         'customer_id'
     ];
 

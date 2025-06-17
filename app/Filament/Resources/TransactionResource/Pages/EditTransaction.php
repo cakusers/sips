@@ -26,9 +26,23 @@ class EditTransaction extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('status_display')
+                ->label(fn($record) => 'Status Transaksi Sekarang : ' . match ($record->status) {
+                    TransactionStatus::NEW => 'Baru',
+                    TransactionStatus::COMPLETE => 'Selesai',
+                    TransactionStatus::DELIVERED => 'Dikirim',
+                    TransactionStatus::CANCELED => 'Dibatalkan',
+                    TransactionStatus::RETURNED => 'Dikembalikan',
+                })
+                ->extraAttributes([
+                    'style' => 'opacity:100%;', // Tambahkan kelas kustom di sini
+                ])
+                ->disabled()
+                ->color('gray'),
+
             Actions\Action::make('complete')
                 ->button()
-                ->label('Selesai')
+                ->label('Selesaikan Transaksi')
                 ->icon('heroicon-s-check-circle')
                 ->color('success')
                 ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED)
@@ -36,12 +50,13 @@ class EditTransaction extends EditRecord
                     // Mengubah Stok dengan Observer.
                     $record->status = TransactionStatus::COMPLETE;
                     $record->save();
+                    $this->refreshFormData(['status']);
                     Notification::make()->title('Transaksi ditandai Selesai')->success()->send();
                 }),
 
             Actions\Action::make('deliver')
                 ->button()
-                ->label('Dikirim')
+                ->label('Kirim')
                 ->color('info')
                 ->icon('heroicon-s-truck')
                 ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
@@ -53,7 +68,7 @@ class EditTransaction extends EditRecord
 
             Actions\Action::make('cancel')
                 ->button()
-                ->label('Batalkan')
+                ->label('Batalkan Transaksi')
                 ->color('danger')
                 ->icon('heroicon-s-x-circle')
                 ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW || $transaction->status === TransactionStatus::DELIVERED)
@@ -65,8 +80,9 @@ class EditTransaction extends EditRecord
 
             Actions\Action::make('return')
                 ->button()
+                ->outlined()
                 ->label('Pengembalian')
-                ->color('amber')
+                ->color('purple')
                 ->icon('heroicon-s-arrow-uturn-left')
                 ->requiresConfirmation()
                 ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::COMPLETE)

@@ -37,6 +37,7 @@ use Filament\Forms\Components\Actions\Action;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
+use Filament\Forms\Components\Hidden;
 
 class TransactionResource extends Resource
 {
@@ -84,7 +85,7 @@ class TransactionResource extends Resource
 
                                 foreach ($items as $key => $itemData) {
                                     $wasteId = $itemData['waste_id'];
-                                    $qty = (float) str_replace(',', '.', $itemData['qty_in_kg'] ?? '0');
+                                    $qty = self::floatFormat($itemData['qty_in_kg']);
 
                                     // Jika item tersebut sudah memiliki pilihan sampah
                                     if ($wasteId) {
@@ -108,7 +109,7 @@ class TransactionResource extends Resource
                                     }
 
                                     $updatedItems[$key] = $itemData;
-                                    $totalPrice += (float) ($itemData['sub_total_price'] ?? 0);
+                                    $totalPrice += (float) ($itemData['sub_total_price']);
                                 }
 
                                 $set('transactionWastes', $updatedItems);
@@ -156,10 +157,11 @@ class TransactionResource extends Resource
                                 PaymentStatus::PAID->value => 'Lunas',
                                 PaymentStatus::UNPAID->value => 'Belum Lunas'
                             ]),
-                        TextInput::make('status')
+                        Forms\Components\TextInput::make('status')
                             ->default(TransactionStatus::NEW->value)
-                            ->readOnly()
                             ->dehydrated(false)
+                            ->live()
+                            ->hidden()
                             ->formatStateUsing(
                                 fn($state): string => match ($state) {
                                     TransactionStatus::NEW->value => 'Baru',
@@ -169,7 +171,7 @@ class TransactionResource extends Resource
                                     TransactionStatus::RETURNED->value => 'Dikembalikan',
                                 }
                             )
-                    ])->columns(4),
+                    ])->columns(3),
 
                 Section::make('Detail Sampah')->schema([
                     Repeater::make('transactionWastes')
@@ -180,8 +182,21 @@ class TransactionResource extends Resource
                         ->columns(5)
                         ->disabled(fn(Get $get) => $get('status') !== 'Baru')
                         ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
-                            $data['stock_in_kg'] = Waste::find($data['waste_id'])->stock_in_kg;
+                            $stock = Waste::find($data['waste_id'])->stock_in_kg;
+                            $stock = self::strFormat($stock);
+                            $qty = self::strFormat($data['qty_in_kg']);
 
+                            $data['stock_in_kg'] = $stock;
+                            $data['qty_in_kg'] = $qty;
+                            return $data;
+                        })
+                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+
+                            $data['qty_in_kg'] = self::floatFormat($data['qty_in_kg']);
+                            return $data;
+                        })
+                        ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                            $data['qty_in_kg'] = self::floatFormat($data['qty_in_kg']);
                             return $data;
                         })
                         ->schema([
@@ -210,8 +225,8 @@ class TransactionResource extends Resource
                                             ->first();
 
                                         $price = $waste->wastePrices->first();
-
-                                        $set('stock_in_kg', $waste->stock_in_kg);
+                                        $stock = self::strFormat($waste->stock_in_kg);
+                                        $set('stock_in_kg', $stock);
 
                                         if ($price) {
                                             $transactionType = $get('../../type');
@@ -227,16 +242,42 @@ class TransactionResource extends Resource
                                 ->label('Berat (Kg)')
                                 ->default(0)
                                 ->required()
+                                ->minValue(0.1)
                                 ->suffix('Kg')
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(
                                     function (Get $get, Set $set, $state) {
-                                        $qty = (float) str_replace(',', '.', $state ?? '0');
+                                        $qty = self::floatFormat($state);
                                         $unitPrice = (int) $get('unit_price');
                                         $set('sub_total_price', $qty * $unitPrice);
                                     }
-                                ),
-                            // ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
+                                )
+                                ->rules([
+                                    fn(Get $get): Closure =>
+                                    function (string $attribute, $value, Closure $fail) use ($get) {
+
+                                        if ($get('../../type') !== TransactionType::SELL->value) {
+                                            return;
+                                        }
+
+                                        $quantityToSell = SELF::floatFormat($value);
+                                        if ($quantityToSell <= 0) return;
+
+                                        $wasteId = $get('waste_id');
+                                        if (!$wasteId) {
+                                            $waste = Waste::find($wasteId);
+                                            $currentStock = $waste->stock_in_kg;
+                                        } else {
+                                            $currentStock = $get('stock_in_kg');
+                                        };
+
+
+                                        if ($quantityToSell > $currentStock) {
+                                            Notification::make()->title('Data tidak berhasil disimpan')->danger()->send();
+                                            $fail("Stok tidak cukup. Stok yang tersedia " . str_replace('.', ',', $currentStock) . " Kg.");
+                                        }
+                                    },
+                                ]),
 
                             TextInput::make('stock_in_kg')
                                 ->label('Stok Tersedia')
@@ -249,7 +290,7 @@ class TransactionResource extends Resource
                                 ->numeric()->required()->prefix('Rp')
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                    $qty = (float) str_replace(',', '.', $get('qty_in_kg') ?? '0');
+                                    $qty = self::floatFormat($get('qty_in_kg'));
                                     $unitPrice = (int) $state;
                                     $set('sub_total_price', $qty * $unitPrice);
                                 }),
@@ -289,7 +330,8 @@ class TransactionResource extends Resource
                 TextColumn::make('customer.name')
                     ->label('Pelanggan')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(15),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->alignment(Alignment::Center)
@@ -360,7 +402,7 @@ class TransactionResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('complete')
                     ->button()
-                    ->label('Selesai')
+                    ->label('Selesaikan')
                     ->icon('heroicon-s-check-circle')
                     ->color('success')
                     ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED)
@@ -397,8 +439,9 @@ class TransactionResource extends Resource
 
                 Tables\Actions\Action::make('return')
                     ->button()
+                    ->outlined()
                     ->label('Pengembalian')
-                    ->color('amber')
+                    ->color('purple')
                     ->icon('heroicon-s-arrow-uturn-left')
                     ->requiresConfirmation()
                     ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::COMPLETE)
@@ -447,5 +490,15 @@ class TransactionResource extends Resource
             }
         }
         $set('total_price', $total);
+    }
+
+    private static function strFormat(float $number): string
+    {
+        return str_replace('.', ',', $number ?? 0);
+    }
+
+    private static function floatFormat(string $number): float
+    {
+        return (float) str_replace(',', '.', $number ?? '0');
     }
 }

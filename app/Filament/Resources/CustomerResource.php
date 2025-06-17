@@ -61,6 +61,7 @@ class CustomerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->limit(20)
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('phone')
