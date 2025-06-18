@@ -2,18 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
 use App\Enums\MovementType;
+use App\Models\StockMovement;
+use Filament\Resources\Resource;
+use App\Filament\Pages\AdjustStock;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\StockMovementResource\Pages;
 use App\Filament\Resources\StockMovementResource\RelationManagers;
-use App\Models\StockMovement;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StockMovementResource extends Resource
 {
@@ -46,21 +47,31 @@ class StockMovementResource extends Resource
                         ->label('ID Transaksi'),
                 ])
                     ->columns(2),
-                Forms\Components\Textarea::make('description')
-                    ->label('Deskripsi')
-                    ->columnSpanFull(),
                 Forms\Components\Section::make()->schema([
-                    Forms\Components\TextInput::make('type')
-                        ->label('Tipe Perubahan'),
+                    Forms\Components\Select::make('type')
+                        ->label('Tipe Perubahan')
+                        ->options([
+                            MovementType::PURCHASEIN->value => 'Pembelian Masuk',
+                            MovementType::SELLOUT->value => 'Penjualan Keluar',
+                            MovementType::RETURNEDIN->value => 'Pengembalian Masuk',
+                            MovementType::RETURNEDOUT->value => 'Pengembalian Keluar',
+                            MovementType::MANUALIN->value => 'Penyesuaian Manual Masuk',
+                            MovementType::MANUALOUT->value => 'Penyesuaian Manual Keluar',
+                        ]),
                     Forms\Components\Select::make('user_id')
                         ->relationship('user', 'name')
-                        ->label('Dilakukan oleh'),
+                        ->label('Dilakukan Oleh'),
                     Forms\Components\TextInput::make('quantity_change_kg')
                         ->label('Jumlah Perubahan')
+                        ->formatStateUsing(fn($state) => self::strFormat($state))
                         ->suffix('Kg'),
                     Forms\Components\TextInput::make('current_stock_after_movement_kg')
                         ->label('Stok Setelah Perubahan')
+                        ->formatStateUsing(fn($state) => self::strFormat($state))
                         ->suffix('Kg'),
+                    Forms\Components\Textarea::make('description')
+                        ->label('Deskripsi')
+                        ->columnSpanFull(),
                 ])
                     ->columns(2),
 
@@ -73,7 +84,7 @@ class StockMovementResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal & Waktu')
-                    ->dateTime()
+                    ->dateTime('j F o, H.i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('waste.name')
                     ->label('Nama Sampah')
@@ -86,13 +97,20 @@ class StockMovementResource extends Resource
                         MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN => 'info',
                         MovementType::SELLOUT, MovementType::RETURNEDOUT, MovementType::MANUALOUT => 'amber',
                         default => 'secondary',
+                    })
+                    ->formatStateUsing(fn(MovementType $state) => match ($state) {
+                        MovementType::PURCHASEIN => 'Pembelian Masuk',
+                        MovementType::SELLOUT => 'Penjualan Keluar',
+                        MovementType::RETURNEDIN => 'Pengembalian Masuk',
+                        MovementType::RETURNEDOUT => 'Pengembalian Keluar',
+                        MovementType::MANUALIN => 'Penyesuaian Manual Masuk',
+                        MovementType::MANUALOUT => 'Penyesuaian Manual Keluar',
                     }),
-                // ->formatStateUsing(fn(string $state): string => str_replace(['_', 'in', 'out'], [' ', 'masuk', 'keluar'], $state)),
                 Tables\Columns\TextColumn::make('quantity_change_kg')
                     ->label('Jumlah (Kg)')
                     ->formatStateUsing(
                         fn(string $state, StockMovement $record): string =>
-                        in_array($record->type, [MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN]) ? '+' . $state : '-' . $state
+                        in_array($record->type, [MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN]) ? '+' . self::strFormat($state) : '-' . self::strFormat($state)
                     )
                     ->color(
                         fn(StockMovement $record): string =>
@@ -101,6 +119,7 @@ class StockMovementResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('current_stock_after_movement_kg')
                     ->label('Stok Akhir (Kg)')
+                    ->formatStateUsing(fn($state) => self::strFormat($state))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('description')
                     ->label('Deskripsi')
@@ -110,14 +129,44 @@ class StockMovementResource extends Resource
                     ->label('ID Transaksi')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Oleh')
+                    ->label('Dilakukan Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('type')
+                    ->options([
+                        MovementType::PURCHASEIN->value => 'Pembelian Masuk',
+                        MovementType::SELLOUT->value => 'Penjualan Keluar',
+                        MovementType::RETURNEDIN->value => 'Pengembalian Masuk',
+                        MovementType::RETURNEDOUT->value => 'Pengembalian Keluar',
+                        MovementType::MANUALIN->value => 'Penyesuaian Manual Masuk',
+                        MovementType::MANUALOUT->value => 'Penyesuaian Manual Keluar',
+                    ])
+                    ->label('Filter Tipe Pergerakan'),
+                Tables\Filters\SelectFilter::make('waste_id')
+                    ->relationship('waste', 'name')
+                    ->label('Filter Sampah'),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
+                        Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['created_from'], fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['created_until'], fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('manual_stock_adjustment')
+                    ->label('Sesuaikan Stok')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('primary')
+                    ->url(AdjustStock::getUrl()),
             ])
             ->bulkActions([
                 // Tables\Actions\BulkActionGroup::make([]),
@@ -138,5 +187,15 @@ class StockMovementResource extends Resource
             'create' => Pages\CreateStockMovement::route('/create'),
             'edit' => Pages\EditStockMovement::route('/{record}/edit'),
         ];
+    }
+
+    private static function strFormat(float $number): string
+    {
+        return str_replace('.', ',', $number ?? 0);
+    }
+
+    private static function floatFormat(string $number): float
+    {
+        return (float) str_replace(',', '.', $number ?? '0');
     }
 }

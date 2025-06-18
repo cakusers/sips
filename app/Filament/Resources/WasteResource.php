@@ -83,35 +83,11 @@ class WasteResource extends Resource
 
                         Section::make()->schema([
                             TextInput::make('stock_in_kg')
-                                ->label('Stok Saat Ini')
+                                ->label('Stok Tersedia')
                                 ->readOnly()
                                 ->default(0)
                                 ->suffix('Kg')
                                 ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
-
-                            // TextInput::make('min_stock_in_kg')
-                            //     ->label('Stok Minimal')
-                            //     ->default(0)
-                            //     ->required()
-                            //     ->suffix('Kg')
-                            //     ->live(onBlur: true)
-                            //     ->hintIcon('heroicon-m-question-mark-circle', tooltip: 'Stok minimum pada gudang. Gunakan tanda koma (,) sebagai pemisah desimal. Contoh: 5,5')
-                            //     ->regex('/^(\d+|\d+,\d+)$/')
-                            //     ->validationMessages([
-                            //         'regex' => 'Kolom harus berisi angka'
-                            //     ])
-                            //     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
-                            //     ->afterStateUpdated(
-                            //         function (Livewire $livewire, $component) {
-                            //             $livewire->addMessagesFromOutside([
-                            //                 'regex' => 'Kolom harus berisi angka'
-                            //             ]);
-                            //             $livewire->validateOnly($component->getStatePath());
-                            //         }
-                            //     )
-                            //     ->dehydrateStateUsing(
-                            //         fn($state) => (float) str_replace(',', '.', $state)
-                            //     )
 
                         ])->columnSpan(1),
                         Section::make()->schema([
@@ -152,6 +128,7 @@ class WasteResource extends Resource
                 TextColumn::make('stock_in_kg')
                     ->label('Stok Tersedia')
                     ->suffix(' Kg')
+                    ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
                     ->color(fn(string $state) => $state === '0' ? 'danger' : ''),
 
             ])

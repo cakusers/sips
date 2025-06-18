@@ -41,4 +41,9 @@ class Waste extends Model
     {
         return $this->hasMany(TransactionWaste::class);
     }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
 }
