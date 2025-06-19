@@ -146,6 +146,8 @@ class StockMovementResource extends Resource
                     ->label('Filter Tipe Pergerakan'),
                 Tables\Filters\SelectFilter::make('waste_id')
                     ->relationship('waste', 'name')
+                    ->searchable()
+                    ->preload()
                     ->label('Filter Sampah'),
                 Tables\Filters\Filter::make('created_at')
                     ->form([

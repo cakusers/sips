@@ -4,7 +4,9 @@ namespace App\Filament\Widgets;
 
 use Carbon\Carbon;
 use App\Models\Transaction;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
+use Illuminate\Support\Number;
 use App\Enums\TransactionStatus;
 use App\Traits\WidgetFormattingHelper;
 use Filament\Support\Enums\IconPosition;
@@ -15,106 +17,131 @@ class FinanceOverview extends BaseWidget
 {
     use WidgetFormattingHelper;
 
-    private function getRevenuePeriode(Carbon $startDate, Carbon $endDate): float
-    {
-        $revenue = Transaction::where('type', TransactionType::SELL->value)
-            ->where('status', TransactionStatus::COMPLETE->value)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('total_price');
-        return (float) ($revenue ?? 0.0);
-    }
-
-    private function getPurchaseValuePeriode(Carbon $startDate, Carbon $endDate): float
-    {
-        $purchaseValue = Transaction::where('type', TransactionType::PURCHASE->value) // Filter tipe PURCHASE
-            ->where('status', TransactionStatus::COMPLETE->value) // Hanya pembelian yang selesai
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('total_price');
-        return (float) ($purchaseValue ?? 0.0);
-    }
-
-    private function getProfitPeriode(Carbon $startDate, Carbon $endDate): float
-    {
-        $profit = Transaction::query()
-            ->from('transactions as t') // Alias untuk tabel transactions
-            ->join('transaction_waste as tw', 't.id', '=', 'tw.transaction_id')
-            ->where('t.type', TransactionType::SELL->value)
-            ->where('t.status', TransactionStatus::COMPLETE->value) // Hanya transaksi selesai
-            ->whereBetween('t.created_at', [$startDate, $endDate])
-            ->selectRaw(
-                // Menghitung laba kotor: Harga Jual Item - (Kuantitas Item * Harga Beli Historis Item)
-                // Jika subkueri untuk harga beli historis mengembalikan NULL (tidak ditemukan),
-                // maka seluruh ekspresi untuk item tersebut akan menjadi NULL,
-                // dan SUM() akan mengabaikan item tersebut dalam penjumlahan total profit.
-                'SUM(tw.sub_total_price - (tw.qty_in_kg * (
-                SELECT wp.purchase_per_kg
-                FROM waste_prices wp
-                WHERE wp.waste_id = tw.waste_id
-                  AND wp.effective_start_date <= t.created_at
-                ORDER BY
-                    wp.effective_start_date DESC,
-                    wp.id DESC
-                LIMIT 1
-            ))) as total_profit'
-            )
-            ->value('total_profit');
-        return (float) ($profit ?? 0.0);
-    }
-
+    /**
+     * Metode utama untuk menghasilkan statistik.
+     * Mengorkestrasi pengambilan data, perhitungan, dan pembuatan kartu.
+     *
+     * @return array<Stat>
+     */
     protected function getStats(): array
     {
-        Carbon::setTestNow(Carbon::create(2025, 4, 1, 10, 0, 0));
+        // $fakeNow = Carbon::create(2025, 5, 31);
+        // Carbon::setTestNow($fakeNow);
 
         try {
-            // --- Tanggal ---
-            $currentMonthStartDate = Carbon::now()->startOfMonth();
-            $currentMonthEndDate   = Carbon::now()->endOfMonth();
-            $lastMonthStartDate = Carbon::now()->subMonthNoOverflow()->startOfMonth();
-            $lastMonthEndDate   = Carbon::now()->subMonthNoOverflow()->endOfMonth();
+            // Tentukan periode waktu untuk bulan ini dan bulan lalu
+            $currentMonthStart = Carbon::now()->startOfMonth();
+            $currentMonthEnd = Carbon::now()->endOfMonth();
+            $previousMonthStart = Carbon::now()->subMonthNoOverflow()->startOfMonth();
+            $previousMonthEnd = Carbon::now()->subMonthNoOverflow()->endOfMonth();
 
-            // --- Kalkulasi Revenue / Pendapatan ---
-            $revenueThisMonth = $this->getRevenuePeriode($currentMonthStartDate, $currentMonthEndDate);
-            $revenueLastMonth = $this->getRevenuePeriode($lastMonthStartDate, $lastMonthEndDate);
-            $revenuePercentage = $this->calculatePercentage($revenueThisMonth, $revenueLastMonth);
-            $revenueResult = $this->getResult($revenuePercentage, $revenueThisMonth, $revenueLastMonth);
+            // Ambil data pendapatan (penjualan)
+            $currentMonthRevenue = $this->getTransactionTotal($currentMonthStart, $currentMonthEnd, TransactionType::SELL);
+            $previousMonthRevenue = $this->getTransactionTotal($previousMonthStart, $previousMonthEnd, TransactionType::SELL);
 
-            // --- Kalkulasi Pengeluaran ---
-            $purchaseValueThisMonth = $this->getPurchaseValuePeriode($currentMonthStartDate, $currentMonthEndDate);
-            $purchaseValueLastMonth = $this->getPurchaseValuePeriode($lastMonthStartDate, $lastMonthEndDate);
-            $purchasePercentage = $this->calculatePercentage($purchaseValueThisMonth, $purchaseValueLastMonth);
-            $purchaseResult = $this->getResult($purchasePercentage, $purchaseValueThisMonth, $purchaseValueLastMonth);
+            // Ambil data pengeluaran (pembelian)
+            $currentMonthPurchases = $this->getTransactionTotal($currentMonthStart, $currentMonthEnd, TransactionType::PURCHASE);
+            $previousMonthPurchases = $this->getTransactionTotal($previousMonthStart, $previousMonthEnd, TransactionType::PURCHASE);
 
-            // --- Kalkulasi Laba Kotor ---
-            $profitThisMonth = $this->getProfitPeriode($currentMonthStartDate, $currentMonthEndDate);
-            $profitLastMonth = $this->getProfitPeriode($lastMonthStartDate, $lastMonthEndDate);
-            $profitPercentage = $this->calculatePercentage($profitThisMonth, $profitLastMonth);
-            // dd([$profitThisMonth, $profitLastMonth, $profitPercentage]);
-            $profitResult = $this->getResult($profitPercentage, $profitThisMonth, $profitLastMonth);
+            // Hitung laba kotor
+            $currentMonthGrossProfit = $currentMonthRevenue - $currentMonthPurchases;
+            $previousMonthGrossProfit = $previousMonthRevenue - $previousMonthPurchases;
 
+            // Buat dan kembalikan kartu statistik
             return [
-                // Stat untuk Pendapatan
-                Stat::make('Pendapatan Bulan Ini', $this->rupiahFormat($revenueThisMonth))
-                    ->description($revenueResult['descriptionText'])
-                    ->descriptionIcon($revenueResult['descriptionIcon'], IconPosition::Before)
-                    ->color($revenueResult['color'])
-                    ->chart([2, 2, 2, 2]),
-
-                // Stat untuk Pengeluaran
-                Stat::make('Pembelian Bulan Ini', $this->rupiahFormat($purchaseValueThisMonth))
-                    ->description($purchaseResult['descriptionText'] . ' dari bulan lalu')
-                    ->descriptionIcon($purchaseResult['descriptionIcon'], IconPosition::Before)
-                    ->color($purchaseResult['color'])
-                    ->chart([2, 2, 2, 2]),
-
-                // Stat untuk Laba Kotor
-                Stat::make('Laba Kotor Bulan Ini', $this->rupiahFormat($profitThisMonth))
-                    ->description($profitResult['descriptionText'])
-                    ->descriptionIcon($profitResult['descriptionIcon'], IconPosition::Before)
-                    ->color($profitResult['color'])
-                    ->chart([2, 2, 2, 2]),
+                $this->createStatCard('Pendapatan Bulan Ini', $currentMonthRevenue, $previousMonthRevenue),
+                $this->createStatCard('Pembelian Bulan Ini', $currentMonthPurchases, $previousMonthPurchases),
+                $this->createStatCard('Laba Kotor Bulan Ini', $currentMonthGrossProfit, $previousMonthGrossProfit),
             ];
         } finally {
-            Carbon::setTestNow();
+            // --- PENTING: Selalu reset waktu setelah selesai ---
+            // Ini akan mengembalikan Carbon::now() ke waktu sebenarnya.
+            // Carbon::setTestNow();
         }
+    }
+
+    /**
+     * Menghitung total transaksi (penjualan atau pembelian) dalam rentang tanggal tertentu.
+     *
+     * @param Carbon $startDate Tanggal mulai periode.
+     * @param Carbon $endDate Tanggal akhir periode.
+     * @param TransactionType $type Tipe transaksi (SELL atau PURCHASE).
+     * @return float Total nilai transaksi.
+     */
+    private function getTransactionTotal(Carbon $startDate, Carbon $endDate, TransactionType $type): float
+    {
+        return Transaction::query()
+            ->where('type', $type->value)
+            ->where('status', TransactionStatus::COMPLETE->value)
+            // Menggunakan updated_at karena status complete diatur saat itu.
+            // Jika Anda memiliki 'completed_at', itu lebih baik.
+            ->whereBetween('updated_at', [$startDate, $endDate])
+            ->sum('total_price');
+    }
+
+    /**
+     * Membuat satu kartu statistik (Stat object).
+     * Fungsi ini mengurus logika untuk menampilkan nilai, deskripsi, ikon, dan warna.
+     *
+     * @param string $label Judul untuk kartu.
+     * @param float $currentValue Nilai untuk periode saat ini.
+     * @param float $previousValue Nilai untuk periode sebelumnya (untuk perbandingan).
+     * @return Stat Objek kartu statistik yang sudah dikonfigurasi.
+     */
+    private function createStatCard(string $label, float $currentValue, float $previousValue): Stat
+    {
+        $percentageChange = $this->calculatePercentageChange($currentValue, $previousValue);
+
+        // Format mata uang ke Rupiah tanpa angka desimal (koma).
+        $formattedValue = 'Rp ' . number_format($currentValue, 0, ',', '.');
+
+        $stat = Stat::make($label, $formattedValue);
+
+        // Jika perubahan adalah 0, tampilkan status netral
+        if (bccomp((string)$percentageChange, '0', 2) === 0) {
+            return $stat
+                ->description('Tidak ada perubahan dari bulan lalu')
+                ->descriptionIcon('heroicon-m-minus')
+                ->color('gray');
+        }
+
+        $isIncrease = $percentageChange > 0;
+        $descriptionText = sprintf(
+            '%s%% %s dari bulan lalu',
+            // Menggunakan format angka Indonesia (koma untuk desimal)
+            number_format(abs($percentageChange), 2, ',', '.'),
+            $isIncrease ? 'kenaikan' : 'penurunan'
+        );
+
+        return $stat
+            ->description($descriptionText)
+            ->descriptionIcon($isIncrease ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+            ->color($isIncrease ? 'success' : 'danger');
+    }
+
+    /**
+     * Menghitung persentase perubahan antara dua nilai.
+     * Menangani kasus pembagian dengan nol dan nilai negatif secara aman.
+     *
+     * @param float $current Nilai saat ini.
+     * @param float $previous Nilai sebelumnya.
+     * @return float Persentase perubahan.
+     */
+    private function calculatePercentageChange(float $current, float $previous): float
+    {
+        if ($previous == 0) {
+            if ($current > 0) {
+                // Dari 0 ke positif adalah kenaikan 100%
+                return 100.0;
+            }
+            if ($current < 0) {
+                // Dari 0 ke negatif adalah penurunan 100%
+                return -100.0;
+            }
+            // Dari 0 ke 0 tidak ada perubahan
+            return 0.0;
+        }
+
+        return (($current - $previous) / $previous) * 100;
     }
 }
