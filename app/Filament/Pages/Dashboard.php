@@ -3,8 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinanceOverview;
+use App\Filament\Widgets\GrossProfitChart;
 use App\Filament\Widgets\ProfitOverview;
+use App\Filament\Widgets\PurchaseChart;
+use App\Filament\Widgets\RevenueChart;
 use App\Filament\Widgets\RevenueOverview;
+use App\Filament\Widgets\TransactionChart;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
@@ -42,7 +46,10 @@ class Dashboard extends \Filament\Pages\Dashboard
     public function getWidgets(): array
     {
         return [
-            FinanceOverview::class
+            FinanceOverview::class,
+            RevenueChart::class,
+            PurchaseChart::class,
+            GrossProfitChart::class
         ];
     }
 }
