@@ -8,6 +8,7 @@ use App\Filament\Widgets\ProfitOverview;
 use App\Filament\Widgets\PurchaseChart;
 use App\Filament\Widgets\RevenueChart;
 use App\Filament\Widgets\RevenueOverview;
+use App\Filament\Widgets\StockValueCompositionChart;
 use App\Filament\Widgets\TransactionChart;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -49,7 +50,8 @@ class Dashboard extends \Filament\Pages\Dashboard
             FinanceOverview::class,
             RevenueChart::class,
             PurchaseChart::class,
-            GrossProfitChart::class
+            GrossProfitChart::class,
+            StockValueCompositionChart::class
         ];
     }
 }
