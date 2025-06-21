@@ -17,7 +17,7 @@ class PurchaseChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        return 'Menampilkan total pembelian sampah yang telah selesai dalam periode waktu tertentu.';
+        return 'Menampilkan total pembelian sampah yang telah selesai.';
     }
 
     protected function getOptions(): RawJs

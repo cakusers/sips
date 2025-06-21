@@ -19,7 +19,7 @@ class RevenueChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        return 'Menampilkan total pendapatan (penjualan) yang telah selesai dalam rentang waktu tertentu.';
+        return 'Menampilkan total pendapatan (penjualan) yang telah selesai.';
     }
 
     protected function getOptions(): RawJs

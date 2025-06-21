@@ -17,7 +17,7 @@ class GrossProfitChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        return 'Menampilkan laba kotor (Pendapatan - Pembelian) dari transaksi yang telah selesai dalam periode waktu tertentu.';
+        return 'Menampilkan laba kotor (Pendapatan - Pembelian) dari transaksi yang telah selesai.';
     }
 
     protected function getOptions(): RawJs

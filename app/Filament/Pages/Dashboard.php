@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinanceOverview;
 use App\Filament\Widgets\GrossProfitChart;
+use App\Filament\Widgets\LowestStockWidget;
 use App\Filament\Widgets\ProfitOverview;
 use App\Filament\Widgets\PurchaseChart;
 use App\Filament\Widgets\RevenueChart;
@@ -51,7 +52,8 @@ class Dashboard extends \Filament\Pages\Dashboard
             RevenueChart::class,
             PurchaseChart::class,
             GrossProfitChart::class,
-            StockValueCompositionChart::class
+            StockValueCompositionChart::class,
+            LowestStockWidget::class
         ];
     }
 }
