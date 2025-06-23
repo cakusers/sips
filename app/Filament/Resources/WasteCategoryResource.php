@@ -37,7 +37,13 @@ class WasteCategoryResource extends Resource
             ->schema([
                 Section::make()->schema([
                     TextInput::make('name')
-                        ->required()
+                        ->label('Nama')
+                        ->required(),
+                    TextInput::make('emission_factor')
+                        ->label('Faktor Emisi')
+                        ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                        ->dehydrateStateUsing(fn($state) => (float) str_replace(',', '.', $state))
+
                 ])->columnSpan(1)
             ]);
     }
@@ -47,8 +53,14 @@ class WasteCategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Nama')
                     ->sortable()
-                    ->searchable()
+                    ->searchable(),
+                TextColumn::make('emission_factor')
+                    ->label('Faktor Emisi')
+                    ->sortable()
+                    ->html()
+                    ->formatStateUsing(fn($state) => $state . ' Kg CO<sub>2</sub>/Kg')
             ])
             ->filters([
                 //

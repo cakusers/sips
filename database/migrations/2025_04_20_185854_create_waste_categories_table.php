@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('waste_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->float('emission_factor')->nullable(); // kg CO2e/kg
             $table->timestamps();
         });
     }

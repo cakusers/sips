@@ -16,21 +16,14 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
-class Dashboard extends \Filament\Pages\Dashboard
+class SalesDashboard extends \Filament\Pages\Dashboard
 {
 
     // use HasFiltersForm;
 
-    protected static ?string $title = 'Dashboard';
-
-    // public function getColumns(): int|string|array
-    // {
-    //     return [
-    //         'sm' => 2,
-    //         'md' => 4,
-    //         'xl' => 6
-    //     ];
-    // }
+    protected static ?string $title = 'Dashboard Penjualan';
+    protected static string $routePath = 'sales';
+    protected static ?int $navigationSort = 1;
 
     // public function filtersForm(Form $form): Form
     // {

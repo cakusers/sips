@@ -16,9 +16,9 @@ class WasteSeeder extends Seeder
      */
     public function run(): void
     {
-        $plastikCategory = WasteCategory::where('name', 'Plastik')->first();
-        $kertasCategory = WasteCategory::where('name', 'Kertas')->first();
-        $logamCategory = WasteCategory::where('name', 'Logam')->first();
+        $plastikCategory = WasteCategory::where('name', 'like', '%' . 'botol' . '%')->first();
+        $kertasCategory = WasteCategory::where('name', 'kardus')->first();
+        $logamCategory = WasteCategory::where('name', 'logam')->first();
 
         Waste::create([
             'name' => 'Botol PET Bening',

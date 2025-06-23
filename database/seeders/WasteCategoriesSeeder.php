@@ -13,11 +13,19 @@ class WasteCategoriesSeeder extends Seeder
      */
     public function run(): void
     {
-        $names = ['Plastik', 'Kertas', 'Kaca', 'Logam'];
+        $categories = [
+            ['name' => 'Botol Plastik', 'emission_factor' => 0.28],
+            // ['name' => 'Plastik', 'emission_factor' => 5.51],
+            ['name' => 'Kaca', 'emission_factor' => 1.46],
+            ['name' => 'Kertas', 'emission_factor' => 0.609],
+            ['name' => 'Kardus', 'emission_factor' => 0.46],
+            ['name' => 'Logam', 'emission_factor' => 2.39],
+        ];
 
-        foreach ($names as $name) {
+        foreach ($categories as $category) {
             DB::table('waste_categories')->insert([
-                'name' => $name
+                'name' => $category['name'],
+                'emission_factor' => $category['emission_factor'],
             ]);
         }
     }

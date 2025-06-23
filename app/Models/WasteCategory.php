@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WasteCategory extends Model
 {
     protected $fillable = [
-        'name'
+        'name',
+        'emission_factor'
     ];
 
-    public function wastes() : HasMany
+    public function wastes(): HasMany
     {
         return $this->hasMany(Waste::class);
     }
