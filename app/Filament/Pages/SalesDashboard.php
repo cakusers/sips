@@ -5,17 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\FinanceOverview;
 use App\Filament\Widgets\FinancialsChart;
 use App\Filament\Widgets\GrossProfitChart;
-use App\Filament\Widgets\LowestStockWidget;
-use App\Filament\Widgets\ProfitOverview;
-use App\Filament\Widgets\PurchaseChart;
-use App\Filament\Widgets\RevenueChart;
-use App\Filament\Widgets\RevenueOverview;
-use App\Filament\Widgets\StockValueCompositionChart;
-use App\Filament\Widgets\TransactionChart;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
-use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use App\Filament\Widgets\WasteMarginChart;
 
 class SalesDashboard extends \Filament\Pages\Dashboard
 {
@@ -32,6 +22,7 @@ class SalesDashboard extends \Filament\Pages\Dashboard
             FinanceOverview::class,
             FinancialsChart::class,
             GrossProfitChart::class,
+            WasteMarginChart::class,
             // StockValueCompositionChart::class,
             // LowestStockWidget::class
         ];
