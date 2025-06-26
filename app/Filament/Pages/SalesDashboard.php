@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinanceOverview;
+use App\Filament\Widgets\FinancialsChart;
 use App\Filament\Widgets\GrossProfitChart;
 use App\Filament\Widgets\LowestStockWidget;
 use App\Filament\Widgets\ProfitOverview;
@@ -25,28 +26,14 @@ class SalesDashboard extends \Filament\Pages\Dashboard
     protected static string $routePath = 'sales';
     protected static ?int $navigationSort = 1;
 
-    // public function filtersForm(Form $form): Form
-    // {
-    //     return $form
-    //         ->schema([
-    //             Section::make()
-    //                 ->schema([
-    //                     DatePicker::make('startDate'),
-    //                     DatePicker::make('endDate'),
-    //                 ])
-    //                 ->columns(3),
-    //         ]);
-    // }
-
     public function getWidgets(): array
     {
         return [
             FinanceOverview::class,
-            RevenueChart::class,
-            PurchaseChart::class,
+            FinancialsChart::class,
             GrossProfitChart::class,
-            StockValueCompositionChart::class,
-            LowestStockWidget::class
+            // StockValueCompositionChart::class,
+            // LowestStockWidget::class
         ];
     }
 }

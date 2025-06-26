@@ -47,11 +47,13 @@ class FinanceOverview extends BaseWidget
             $currentMonthGrossProfit = $currentMonthRevenue - $currentMonthPurchases;
             $previousMonthGrossProfit = $previousMonthRevenue - $previousMonthPurchases;
 
+            // dd([$currentMonthGrossProfit, $previousMonthGrossProfit]);
+
             // Buat dan kembalikan kartu statistik
             return [
                 $this->createStatCard('Pendapatan Bulan Ini', $currentMonthRevenue, $previousMonthRevenue),
                 $this->createStatCard('Pembelian Bulan Ini', $currentMonthPurchases, $previousMonthPurchases),
-                $this->createStatCard('Laba Kotor Bulan Ini', $currentMonthGrossProfit, $previousMonthGrossProfit),
+                $this->createStatCard('Estimasi Laba Kotor Bulan Ini', $currentMonthGrossProfit, $previousMonthGrossProfit),
             ];
         } finally {
             // --- PENTING: Selalu reset waktu setelah selesai ---
@@ -142,6 +144,9 @@ class FinanceOverview extends BaseWidget
             return 0.0;
         }
 
-        return (($current - $previous) / $previous) * 100;
+        $result = ($current - $previous) / abs($previous) * 100;
+
+        // return (($current - $previous) / $previous) * 100;
+        return $result;
     }
 }

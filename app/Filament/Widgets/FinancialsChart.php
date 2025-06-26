@@ -2,28 +2,44 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\TransactionStatus;
-use App\Enums\TransactionType;
-use App\Models\Transaction;
 use Carbon\Carbon;
-use Filament\Forms\Components\Select;
+use App\Models\Transaction;
 use Filament\Support\RawJs;
+use App\Enums\TransactionType;
+use App\Enums\TransactionStatus;
+use Filament\Forms\Components\Select;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class GrossProfitChart extends ApexChartWidget
+class FinancialsChart extends ApexChartWidget
 {
 
-    protected static ?string $chartId = 'grossProfitChart';
+    protected static ?string $chartId = 'financialsChart';
 
     public function getHeading(): string
     {
-        $chartLabel = $this->filterFormData['timeFilter'] === 'weekly' ? 'Mingguan' : 'Bulanan';
-        return 'Grafik Laba Kotor ' . $chartLabel;
+        $chartLabel = '';
+        if ($this->filter === 'revenue') {
+            $chartLabel = 'Pendapatan';
+        } else {
+            $chartLabel = 'Pembelian';
+        }
+
+        if ($this->filterFormData['timeFilter'] === 'weekly') {
+            $chartLabel = $chartLabel . ' Mingguan';
+        } else {
+            $chartLabel = $chartLabel . ' Bulanan';
+        }
+
+        return "Grafik {$chartLabel}";
     }
 
-    protected static ?string $footer = 'Menampilkan Estimasi laba kotor transaksi yang selesai';
+    protected function getFooter(): ?string
+    {
+        $revenueFooter = 'Menampilkan pendapatan (penjualan) yang telah selesai.';
+        $purchaseFooter = 'Menampilkan pembelian sampah yang telah selesai.';
+        return $this->filter === 'revenue' ? $revenueFooter : $purchaseFooter;
+    }
 
-    // Filter Form untuk memilih periode
     protected function getFormSchema(): array
     {
         return [
@@ -38,27 +54,37 @@ class GrossProfitChart extends ApexChartWidget
         ];
     }
 
-    /**
-     * Mendefinisikan opsi dan data untuk Apex Chart.
-     */
+    public ?string $filter = 'revenue'; // Defaul FIlter
+    protected function getFilters(): ?array
+    {
+        return [
+            'revenue' => 'Pendapatan',
+            'purchase' => 'Pembelian',
+        ];
+    }
+
+
     protected function getOptions(): array
     {
-        // 1. Ambil nilai filter dari form
+        // 1. Ambil nilai dari kedua filter
+        $dataType = $this->filter;
         $timeFilter = $this->filterFormData['timeFilter'];
 
         // 2. Tentukan variabel dinamis
+        $transactionType = $dataType === 'revenue' ? TransactionType::SELL->value : TransactionType::PURCHASE->value;
         $isWeekly = $timeFilter === 'weekly';
         $startDate = $isWeekly ? Carbon::now()->startOfMonth() : Carbon::now()->startOfYear();
         $endDate = $isWeekly ? Carbon::now()->endOfMonth() : Carbon::now()->endOfYear();
 
-        // 3. Jalankan SATU KALI kueri yang dioptimalkan
+        // 3. Jalankan kueri yang dioptimalkan
         $transactions = Transaction::query()
+            ->where('type', $transactionType)
             ->where('status', TransactionStatus::COMPLETE->value)
             ->whereBetween('updated_at', [$startDate, $endDate])
-            ->select('type', 'total_price', 'updated_at')
+            ->select('total_price', 'updated_at')
             ->get();
 
-        // 4. Proses data menggunakan Laravel Collection
+        // 4. Proses data
         $results = $transactions
             ->groupBy(function ($transaction) use ($isWeekly) {
                 $date = Carbon::parse($transaction->updated_at);
@@ -66,11 +92,7 @@ class GrossProfitChart extends ApexChartWidget
                     ? $date->startOfWeek()->translatedFormat('D, d M')
                     : $date->translatedFormat('M');
             })
-            ->map(function ($group) {
-                $revenue = $group->where('type', TransactionType::SELL)->sum('total_price');
-                $purchase = $group->where('type', TransactionType::PURCHASE)->sum('total_price');
-                return $revenue - $purchase;
-            });
+            ->map(fn($group) => $group->sum('total_price'));
 
         // 5. Siapkan "cetakan" data
         $periodData = [];
@@ -90,20 +112,24 @@ class GrossProfitChart extends ApexChartWidget
         $data = array_values($chartData);
         $labels = array_keys($chartData);
 
+        // 6. Atur tampilan dinamis
+        $chartLabel = $dataType === 'revenue' ? 'Pendapatan' : 'Pembelian';
+        $chartColor = $dataType === 'revenue' ? '#3b82f6' : '#f97316';
+
         return [
             'chart' => [
                 'type' => 'area',
                 'height' => 300,
                 'toolbar' => ['show' => false]
             ],
-            'series' => [['name' => 'Laba Kotor', 'data' => $data]],
+            'series' => [['name' => $chartLabel, 'data' => $data]],
             'xaxis' => ['categories' => $labels],
             'yaxis' => [
                 'title' => [
-                    'text' => 'Dalam Rupiah (Rp)'
+                    'text' => 'Rupiah (Rp)'
                 ]
             ],
-            'colors' => ['#22c55e'], // Hijau
+            'colors' => [$chartColor],
             'stroke' => ['curve' => 'smooth'],
             'dataLabels' => ['enabled' => false],
         ];

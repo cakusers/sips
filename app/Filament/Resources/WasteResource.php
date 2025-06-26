@@ -34,11 +34,11 @@ class WasteResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Sampah';
+    protected static ?string $navigationLabel = 'Data Sampah';
 
     protected static ?string $navigationGroup = 'Pengelolaan Sampah';
 
-    protected static ?string $label = 'Sampah';
+    protected static ?string $label = 'Data Sampah';
 
     protected static ?int $navigationSort = 0;
 

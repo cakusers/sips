@@ -23,9 +23,9 @@ class WasteCategoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $label = 'Kategori Sampah';
+    protected static ?string $label = 'Data Kategori Sampah';
 
-    protected static ?string $navigationLabel = 'Kategori';
+    protected static ?string $navigationLabel = 'Data Kategori Sampah';
 
     protected static ?string $navigationGroup = 'Pengelolaan Sampah';
 

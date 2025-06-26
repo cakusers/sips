@@ -22,9 +22,9 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
 
-    protected static ?string $label = 'Pelanggan';
+    protected static ?string $label = 'Data Pelanggan';
 
-    protected static ?string $navigationLabel = 'Pelanggan';
+    protected static ?string $navigationLabel = 'Data Pelanggan';
 
     protected static ?string $navigationGroup = 'Pengelolaan Pelanggan';
 
