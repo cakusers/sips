@@ -40,7 +40,7 @@ class WasteResource extends Resource
 
     protected static ?string $label = 'Data Sampah';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

@@ -24,6 +24,7 @@ class StockMovementResource extends Resource
     protected static ?string $navigationGroup = 'Pengelolaan Sampah';
     protected static ?string $navigationLabel = 'Riwayat Stok';
     protected static ?string $label = 'Riwayat Stok';
+    protected static ?int $navigationSort = 3;
 
     public static function canEdit(Model $record): bool
     {

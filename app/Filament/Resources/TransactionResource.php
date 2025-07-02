@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use Closure;
 use Dom\Text;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Waste;
@@ -18,10 +19,13 @@ use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
+use Filament\Tables\Filters\Filter;
 use Livewire\Component as Livewire;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\Alignment;
 use Filament\Forms\Components\Section;
+use Filament\Tables\Filters\Indicator;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\ViewAction;
@@ -30,6 +34,7 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,18 +42,24 @@ use Filament\Forms\Components\Actions\Action;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-use Filament\Forms\Components\Hidden;
+
+use function PHPUnit\Framework\isNull;
 
 class TransactionResource extends Resource
 {
     protected static ?string $model = Transaction::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
     protected static ?string $label = 'Data Transaksi';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected static array $transactionType = [
         TransactionType::PURCHASE->value => 'Beli',
         TransactionType::SELL->value => 'Jual'
+    ];
+
+    protected static array $paymentStatus = [
+        PaymentStatus::PAID->value => 'Lunas',
+        PaymentStatus::UNPAID->value => 'Belum Lunas'
     ];
 
     protected static array $transactionStatus = [
@@ -58,6 +69,8 @@ class TransactionResource extends Resource
         TransactionStatus::CANCELED->value => 'Dibatalkan',
         TransactionStatus::RETURNED->value => 'Dikembalikan',
     ];
+
+
 
     public static function form(Form $form): Form
     {
@@ -396,9 +409,57 @@ class TransactionResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('type')
+                    ->label('Tipe Transaksi')
                     ->options(self::$transactionType),
                 SelectFilter::make('status')
-                    ->options(self::$transactionStatus)
+                    ->multiple()
+                    ->label('Status Transaksi')
+                    ->options(self::$transactionStatus),
+                SelectFilter::make('payment_status')
+                    ->label('Status Pembayaran')
+                    ->options(self::$paymentStatus),
+                Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Tanggal Mulai')
+                            ->placeholder('dd/mm/yy')
+                            ->displayFormat('d F Y')
+                            ->maxDate(fn(Get $get) => $get('created_until') ?? now())
+                            ->live(),
+                        DatePicker::make('created_until')
+                            ->label('Tanggal Selesai')
+                            ->placeholder('dd/mm/yy')
+                            ->displayFormat('d F Y')
+                            ->minDate(fn(Get $get) => $get('created_from'))
+                            ->maxDate(now())
+                            ->live(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = Indicator::make('Dari ' . Carbon::parse($data['created_from'])->toFormattedDateString('d F Y'))
+                                ->removeField('created_from');
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = Indicator::make('Sampai ' . Carbon::parse($data['created_until'])->toFormattedDateString('d F Y'))
+                                ->removeField('created_until');
+                        }
+                        return $indicators;
+                    })
+
             ])
             ->actions([
                 Tables\Actions\Action::make('complete')

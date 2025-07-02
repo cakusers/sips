@@ -14,6 +14,7 @@ class GrossProfitChart extends ApexChartWidget
 {
 
     protected static ?string $chartId = 'grossProfitChart';
+    
 
     public function getHeading(): string
     {
@@ -21,7 +22,7 @@ class GrossProfitChart extends ApexChartWidget
         return 'Grafik Laba Kotor ' . $chartLabel;
     }
 
-    protected static ?string $footer = 'Menampilkan Estimasi laba kotor transaksi yang selesai';
+    protected static ?string $footer = 'Menampilkan estimasi laba kotor dari transaksi yang telah selesai baik lunas maupun belum lunas.';
 
     // Filter Form untuk memilih periode
     protected function getFormSchema(): array

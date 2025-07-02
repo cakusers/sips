@@ -29,7 +29,7 @@ class WasteCategoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Pengelolaan Sampah';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {

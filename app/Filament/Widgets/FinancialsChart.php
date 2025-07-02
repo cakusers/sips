@@ -35,8 +35,8 @@ class FinancialsChart extends ApexChartWidget
 
     protected function getFooter(): ?string
     {
-        $revenueFooter = 'Menampilkan pendapatan (penjualan) yang telah selesai.';
-        $purchaseFooter = 'Menampilkan pembelian sampah yang telah selesai.';
+        $revenueFooter = 'Menampilkan pendapatan (penjualan) yang telah selesai dari transaksi yang telah selesai baik lunas maupun belum lunas.';
+        $purchaseFooter = 'Menampilkan pembelian sampah yang telah selesai dari transaksi yang telah selesai baik lunas maupun belum lunas.';
         return $this->filter === 'revenue' ? $revenueFooter : $purchaseFooter;
     }
 
