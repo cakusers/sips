@@ -2,7 +2,7 @@
 
 return [
 
-    'title' => 'Lihat Data :label',
+    'title' => 'Lihat :label',
 
     'breadcrumb' => 'Lihat Data',
 

@@ -2,7 +2,7 @@
 
 return [
 
-    'title' => 'Buat Data :label',
+    'title' => 'Buat :label',
 
     'breadcrumb' => 'Buat Data',
 

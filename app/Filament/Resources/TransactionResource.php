@@ -49,6 +49,7 @@ class TransactionResource extends Resource
 {
     protected static ?string $model = Transaction::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
+    protected static ?string $navigationLabel = 'Data Transaksi';
     protected static ?string $label = 'Data Transaksi';
     protected static ?int $navigationSort = 1;
 
@@ -166,7 +167,9 @@ class TransactionResource extends Resource
                         Select::make('payment_status')
                             ->label('Status Pembayaran')
                             ->required()
+                            ->live()
                             ->default(PaymentStatus::UNPAID->value)
+                            ->disabled(fn(Get $get) => $get('status') === 'Selesai')
                             ->options([
                                 PaymentStatus::PAID->value => 'Lunas',
                                 PaymentStatus::UNPAID->value => 'Belum Lunas'
@@ -249,11 +252,15 @@ class TransactionResource extends Resource
                                                 : $price->purchase_per_kg;
                                             $set('unit_price', $unitPrice);
                                         }
+
+                                        $qty = self::floatFormat($get('qty_in_kg'));
+                                        $unitPrice = (int) $get('unit_price');
+                                        $set('sub_total_price', $qty * $unitPrice);
                                     }
                                 ),
 
                             TextInput::make('qty_in_kg')
-                                ->label('Berat (Kg)')
+                                ->label('Berat')
                                 ->default(0)
                                 ->required()
                                 ->minValue(0.1)
@@ -327,6 +334,7 @@ class TransactionResource extends Resource
                     TextInput::make('total_price')
                         ->label('Harga Total')
                         ->prefix('Rp')->numeric()
+                        ->required()
                         ->readOnly()
                         ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
                     TextInput::make('address')
@@ -467,7 +475,7 @@ class TransactionResource extends Resource
                     ->label('Selesaikan')
                     ->icon('heroicon-s-check-circle')
                     ->color('success')
-                    ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED)
+                    ->visible(fn(Transaction $record): bool => ($record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED) && $record->payment_status === PaymentStatus::PAID)
                     ->action(function (Transaction $record) {
                         // Mengubah Stok dengan Observer.
                         $record->status = TransactionStatus::COMPLETE;

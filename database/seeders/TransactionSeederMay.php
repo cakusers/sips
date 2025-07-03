@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PaymentStatus;
 use Carbon\Carbon;
 use App\Models\Waste;
 use App\Models\Customer;
@@ -30,6 +31,7 @@ class TransactionSeederMay extends Seeder
         $transaction1Mei = Transaction::create([
             'type' => TransactionType::PURCHASE,
             'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
             'customer_id' => $customer->random()->id,
             'total_price' => $qty * $botol->latestPrice->purchase_per_kg, // 8 * 1500
             'created_at' => $mei1,
@@ -50,6 +52,7 @@ class TransactionSeederMay extends Seeder
         $transaction2Mei = Transaction::create([
             'type' => TransactionType::PURCHASE,
             'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
             'customer_id' => $customer->random()->id,
             'total_price' => $qty * $hargaBeliBaru, // 8 * 1000
             'created_at' => $mei1,
@@ -69,6 +72,7 @@ class TransactionSeederMay extends Seeder
         $transaction1Mei = Transaction::create([
             'type' => TransactionType::SELL,
             'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
             'customer_id' => $customer->random()->id,
             'total_price' => $qty * $botol->latestPrice->selling_per_kg, // 8 * 2000
             'created_at' => $mei3,
@@ -89,6 +93,7 @@ class TransactionSeederMay extends Seeder
         $transaction1Mei = Transaction::create([
             'type' => TransactionType::SELL,
             'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
             'customer_id' => $customer->random()->id,
             'total_price' => $qty * $hargaJualBaru, // 8 * 2200
             'created_at' => $mei4,

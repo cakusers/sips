@@ -5,12 +5,14 @@ namespace App\Filament\Resources\TransactionResource\Pages;
 use Filament\Actions;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use App\Filament\Resources\TransactionResource;
+use Filament\Forms\Get;
 
 class EditTransaction extends EditRecord
 {
@@ -45,13 +47,22 @@ class EditTransaction extends EditRecord
                 ->label('Selesaikan Transaksi')
                 ->icon('heroicon-s-check-circle')
                 ->color('success')
-                ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED)
+                ->visible(function (Transaction $record) {
+                    $isValid = $record->status === TransactionStatus::NEW || $record->status === TransactionStatus::DELIVERED;
+                    $isPaid = $this->data['payment_status'] === PaymentStatus::PAID->value;
+
+                    return $isValid && $isPaid;
+                })
                 ->action(function (Transaction $record) {
-                    // Mengubah Stok dengan Observer.
-                    $record->status = TransactionStatus::COMPLETE;
-                    $record->save();
-                    $this->refreshFormData(['status']);
+                    // Stok Otomatis terubah dengan Observer.
+                    $formData = $this->form->getState();
+                    $formData['status'] = TransactionStatus::COMPLETE;
+                    $record->update($formData);
+                    // $record->status = TransactionStatus::COMPLETE;
+                    // $record->save();
+                    // $this->refreshFormData(['status']);
                     Notification::make()->title('Transaksi ditandai Selesai')->success()->send();
+                    return redirect(static::getUrl(['record' => $record]));
                 }),
 
             Actions\Action::make('deliver')
@@ -81,7 +92,7 @@ class EditTransaction extends EditRecord
             Actions\Action::make('return')
                 ->button()
                 ->outlined()
-                ->label('Pengembalian')
+                ->label('Pengembalian Transaksi')
                 ->color('purple')
                 ->icon('heroicon-s-arrow-uturn-left')
                 ->requiresConfirmation()

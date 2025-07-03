@@ -2,7 +2,7 @@
 
 return [
 
-    'title' => 'Ubah Data :label',
+    'title' => 'Ubah :label',
 
     'breadcrumb' => 'Ubah Data',
 
