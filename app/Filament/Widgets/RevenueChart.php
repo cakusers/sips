@@ -3,181 +3,282 @@
 namespace App\Filament\Widgets;
 
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use App\Models\Transaction;
-use Filament\Support\RawJs;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
-use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Support\RawJs;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
+use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class RevenueChart extends ChartWidget
+class RevenueChart extends ApexChartWidget
 {
-    protected static ?string $heading = 'Grafik Pendapatan';
-    public ?string $filter = 'weekly';
-    protected static ?string $maxHeight = '300px';
-
-    public function getDescription(): ?string
+    protected static ?string $chartId = 'revenueChart';
+    protected function getHeading(): null|string|Htmlable|View
     {
-        return 'Menampilkan total pendapatan (penjualan) yang telah selesai.';
-    }
+        $period = '';
+        $month = '';
+        $year = '';
 
-    protected function getOptions(): RawJs
-    {
-        return RawJs::make(<<<JS
-        {
-            scales: {
-                y: {
-                    ticks: {
-                        callback: function(value) {
-                            if (value >= 1000000000) {
-                                return 'Rp ' + (value / 1000000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + ' Miliar';
-                            }
-                            if (value >= 1000000) {
-                                return 'Rp ' + (value / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + ' Juta';
-                            }
-                            if (value >= 1000) {
-                                return 'Rp ' + (value / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + ' Ribu';
-                            }
-                            return 'Rp ' + value.toLocaleString('id-ID');
-                        }
-                    }
-                },
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += 'Rp' + context.parsed.y.toLocaleString('id-ID');
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
-        }
-        JS);
-    }
+        $heading = 'Grafik Pendapatan %s ';
 
-    protected function getData(): array
-    {
-        $activeFilter = $this->filter;
-        $data = [];
-        $labels = [];
-
-        switch ($activeFilter) {
+        switch ($this->filterFormData['period']) {
             case 'weekly':
-                $startOfMonth = Carbon::now()->startOfMonth();
-                $endOfMonth = Carbon::now()->endOfMonth();
-
-                // Ambil semua data pendapatan untuk bulan ini
-                $dailyRevenues = Transaction::query()
-                    ->where('type', TransactionType::SELL->value)
-                    ->where('status', TransactionStatus::COMPLETE->value)
-                    ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
-                    ->select(DB::raw('DATE(updated_at) as date'), DB::raw('SUM(total_price) as total'))
-                    ->groupBy('date')
-                    ->pluck('total', 'date');
-
-                // Array untuk setiap minggu di bulan ini
-                $weeklyData = [];
-                $currentDate = $startOfMonth->copy();
-                while ($currentDate->lte($endOfMonth)) {
-                    $startOfWeek = $currentDate->copy()->startOfWeek();
-                    if ($startOfWeek->isFuture()) {
-                        break;
-                    }
-                    $weekLabel = $startOfWeek->translatedFormat('D, d M');
-                    $weeklyData[$weekLabel] = 0;
-                    $currentDate->addWeek();
-                }
-
-                // Proses data harian dan masukkan ke minggu yang benar.
-                foreach ($dailyRevenues as $date => $total) {
-                    $dateCarbon = Carbon::parse($date);
-                    $weekLabel = $dateCarbon->startOfWeek()->translatedFormat('D, d M');
-                    if (isset($weeklyData[$weekLabel])) {
-                        $weeklyData[$weekLabel] += $total;
-                    }
-                }
-
-                $labels = array_keys($weeklyData);
-                $data = array_values($weeklyData);
+                $period = 'Mingguan';
+                $filterMonth = (int) $this->filterFormData['month'];
+                $month = Carbon::create()->month($filterMonth)
+                    ->locale('id')
+                    ->translatedFormat('M');
+                $year = $this->filterFormData['year'];
+                $heading = sprintf($heading . '( %s %s )', $period, $month, $year);
                 break;
 
             case 'monthly':
-                $startOfYear = Carbon::now()->startOfYear();
-                $endOfYear = Carbon::now()->endOfYear();
+                $period = 'Bulanan';
+                $year = $this->filterFormData['year'];
+                $heading = sprintf($heading . '( %s )', $period, $year);
+                break;
 
-                //Ambil semua data pendapatan untuk tahun ini
-                $revenuesByMonth = Transaction::query()
-                    ->where('type', TransactionType::SELL->value)
-                    ->where('status', TransactionStatus::COMPLETE->value)
-                    ->whereBetween('updated_at', [$startOfYear, $endOfYear])
-                    ->select(DB::raw('MONTH(updated_at) as month'), DB::raw('SUM(total_price) as total'))
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
+            default:
+                $period = 'Tahunan';
+                $heading = sprintf($heading, $period);
+                break;
+        }
 
-                // Array untuk 12 bulan dengan nilai awal 0.
-                $monthlyData = [];
-                $currentDate = $startOfYear->copy();
-                while ($currentDate->year == $startOfYear->year) {
-                    if ($currentDate->isFuture()) {
-                        break;
-                    }
-                    $monthlyData[$currentDate->translatedFormat('M')] = 0;
-                    $currentDate->addMonth();
-                }
+        return $heading;
+    }
+    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) yang telah selesai dari transaksi yang telah selesai baik lunas maupun belum lunas';
 
-                // Isi "cetakan" dengan data nyata dari hasil kueri.
-                foreach ($revenuesByMonth as $monthNumber => $total) {
-                    $monthName = Carbon::create()->month($monthNumber)->translatedFormat('M');
-                    if (isset($monthlyData[$monthName])) {
-                        $monthlyData[$monthName] = $total;
-                    }
-                }
 
-                // 4. Siapkan data akhir untuk grafik
-                $labels = array_keys($monthlyData);
-                $data = array_values($monthlyData);
+
+    protected static function getAvailableYear(): Collection
+    {
+        return Transaction::query()
+            ->selectRaw('YEAR(created_at) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year', 'year');
+    }
+
+    protected static function getAvailableMonth(int $year): Collection
+    {
+        $months = Transaction::query()
+            ->whereYear('created_at', $year)
+            ->selectRaw('MONTH(created_at) as month_number')
+            ->distinct()
+            ->orderBy('month_number', 'asc')
+            ->pluck('month_number', 'month_number');
+
+        $months = $months->map(
+            fn($monthNumber) =>
+            Carbon::create()
+                ->month($monthNumber)
+                ->locale('id')
+                ->translatedFormat('F')
+        );
+
+        return $months;
+    }
+
+    protected function getFormSchema(): array
+    {
+        return [
+            Select::make('period')
+                ->label('Periode')
+                ->options([
+                    'weekly' => 'Mingguan',
+                    'monthly' => 'Bulanan',
+                    'yearly' => 'Tahunan'
+                ])
+                ->default('weekly')
+                ->live(),
+            /**
+             * Tampilkan ketika period mingguan
+             */
+            Select::make('month')
+                ->label('Bulan')
+                ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                ->default(Carbon::now()->month)
+                ->visible(fn(Get $get) => $get('period') === 'weekly')
+                ->live(),
+            /**
+             * Tampilkan ketika period mingguan dan bulanan
+             */
+            Select::make('year')
+                ->label('Tahun')
+                ->options($this->getAvailableYear())
+                ->default(Carbon::now()->year)
+                ->hidden(fn(Get $get) => $get('period') === 'yearly')
+                ->live(),
+        ];
+    }
+
+    protected function getRevenueYearly()
+    {
+        $yearlyRevenue = Transaction::query()
+            ->where('type', '=', TransactionType::SELL)
+            ->where('status', '=', TransactionStatus::COMPLETE)
+            ->selectRaw("YEAR(created_at) as year, SUM(total_price) as total")
+            ->groupBy('year')
+            ->pluck('total', 'year');
+
+        return $yearlyRevenue;
+    }
+
+    protected function getRevenueMonthly(int $year): Collection
+    {
+        $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
+        $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
+        $monthlyRevenue = Transaction::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('type', '=', TransactionType::SELL)
+            ->where('status', '=', TransactionStatus::COMPLETE)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, SUM(total_price) as total")
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $period = CarbonPeriod::create($startDate, '1 month', $endDate);
+        $monthTemplate = collect();
+        foreach ($period as $date) {
+            $month = $date->startOfMonth()->format('Y-m');
+            $monthTemplate[$month] = 0;
+        }
+
+        $result = $monthTemplate->merge($monthlyRevenue);
+        $result = $result->mapWithKeys(function ($total, $date) {
+            $formattedDate = Carbon::parse($date)
+                ->locale('id')
+                ->translatedFormat('M Y');
+            return [$formattedDate => $total];
+        });
+
+        return $result;
+    }
+
+    protected function getRevenueWeekly(int $month, int $year): Collection
+    {
+        $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
+        $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth();
+        $weeklyRevenue = Transaction::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('type', '=', TransactionType::SELL)
+            ->where('status', '=', TransactionStatus::COMPLETE)
+            ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(total_price) as total")
+            ->groupBy('week_start_date')
+            ->pluck('total', 'week_start_date');
+
+        // Template tanggal
+        $period = CarbonPeriod::create($startDate, '1 week', $endDate);
+        $dateTemplate = collect();
+        foreach ($period as $date) {
+            $weekStartDate = $date->startOfWeek()->format('Y-m-d');
+            $dateTemplate[$weekStartDate] = 0;
+        }
+
+        $result = $dateTemplate->merge($weeklyRevenue);
+        $result = $result->mapWithKeys(function ($total, $date) {
+            $formattedDate = Carbon::parse($date)
+                ->locale('id')
+                ->translatedFormat('d M Y');
+            return [$formattedDate => $total];
+        });
+
+        return $result;
+    }
+
+    /**
+     * Chart options (series, labels, types, size, animations...)
+     * https://apexcharts.com/docs/options
+     *
+     * @return array
+     */
+    protected function getOptions(): array
+    {
+        $period = $this->filterFormData['period'];
+
+        $data = [];
+        switch ($period) {
+            case 'yearly':
+                $data = $this->getRevenueYearly();
+                break;
+
+            case 'monthly':
+                $year = $year = $this->filterFormData['year'];
+                $data = $this->getRevenueMonthly($year);
+                break;
+
+            default:
+                $month = $this->filterFormData['month'];
+                $year = $this->filterFormData['year'];
+                $data = $this->getRevenueWeekly($month, $year);
                 break;
         }
 
         return [
-            'datasets' => [
+            'chart' => [
+                'type' => 'area',
+                'height' => 300,
+                'toolbar' => ['show' => false]
+            ],
+            'series' => [
                 [
-                    'label' => 'Pendapatan',
-                    'data' => $data,
-                    'borderColor' => '#3b82f6',
-                    'fill' => true,
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.2)',
-                    'tension' => 0.3,
+                    'name' => 'RevenueChart',
+                    'data' => $data->values()->all(),
                 ],
             ],
-            'labels' => $labels,
+            'xaxis' => [
+                'categories' => $data->keys()->all(),
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
+                    ],
+                ],
+            ],
+            'yaxis' => [
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
+                    ],
+                ],
+                'title' => [
+                    'text' => 'Rupiah (Rp)'
+                ]
+            ],
+            'colors' => ['#3b82f6'],
+            'stroke' => [
+                'curve' => 'smooth',
+            ],
+            'dataLabels' => [
+                'enabled' => false,
+            ],
         ];
     }
 
-    /**
-     * Mendefinisikan filter yang tersedia untuk widget ini.
-     *
-     * @return array|null
-     */
-    protected function getFilters(): ?array
+    protected function extraJsOptions(): ?RawJs
     {
-        return [
-            'weekly' => 'Mingguan',
-            'monthly' => 'Bulanan',
-        ];
-    }
-
-    protected function getType(): string
-    {
-        return 'line';
+        return RawJs::make(<<<'JS'
+        {
+            yaxis: {
+                labels: {
+                    formatter: function (val) {
+                        return val.toLocaleString('id-ID');
+                    }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val.toLocaleString('id-ID');
+                    }
+                }
+            }
+        }
+        JS);
     }
 }

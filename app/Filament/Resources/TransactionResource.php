@@ -71,8 +71,6 @@ class TransactionResource extends Resource
         TransactionStatus::RETURNED->value => 'Dikembalikan',
     ];
 
-
-
     public static function form(Form $form): Form
     {
         return $form
@@ -274,15 +272,22 @@ class TransactionResource extends Resource
                                     }
                                 )
                                 ->rules([
+                                    // Cek Berat lebih dari 0
+                                    fn() =>
+                                    function (string $attribute, $value, Closure $fail) {
+                                        $qty = self::floatFormat($value);
+                                        if ($qty <= 0.0) {
+                                            Notification::make()->title('Data tidak berhasil disimpan')->danger()->send();
+                                            $fail("Berat harus lebih dari 0");
+                                        }
+                                    },
+                                    // Cek ketika menjual barang, stoknya harus tersedia
                                     fn(Get $get): Closure =>
                                     function (string $attribute, $value, Closure $fail) use ($get) {
-
+                                        $qty = self::floatFormat($value);
                                         if ($get('../../type') !== TransactionType::SELL->value) {
                                             return;
                                         }
-
-                                        $quantityToSell = SELF::floatFormat($value);
-                                        if ($quantityToSell <= 0) return;
 
                                         $wasteId = $get('waste_id');
                                         if (!$wasteId) {
@@ -292,8 +297,7 @@ class TransactionResource extends Resource
                                             $currentStock = $get('stock_in_kg');
                                         };
 
-
-                                        if ($quantityToSell > $currentStock) {
+                                        if ($qty > $currentStock) {
                                             Notification::make()->title('Data tidak berhasil disimpan')->danger()->send();
                                             $fail("Stok tidak cukup. Stok yang tersedia " . str_replace('.', ',', $currentStock) . " Kg.");
                                         }
@@ -357,7 +361,7 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->alignment(Alignment::Center)
-                    ->formatStateUsing(fn($state) => $state === TransactionType::SELL->value ? 'Jual' : 'Beli')
+                    ->formatStateUsing(fn($state) => $state === TransactionType::SELL ? 'Jual' : 'Beli')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga Total')

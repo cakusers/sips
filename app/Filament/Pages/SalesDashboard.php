@@ -4,9 +4,13 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinanceOverview;
 use App\Filament\Widgets\FinancialsChart;
+use App\Filament\Widgets\CashFlowOverview;
 use App\Filament\Widgets\GrossProfitChart;
-use App\Filament\Widgets\TransactionWIdget;
+use App\Filament\Widgets\NetCashFlowChart;
 use App\Filament\Widgets\WasteMarginChart;
+use App\Filament\Widgets\TransactionOverview;
+use App\Filament\Widgets\CashFlowSectionHeader;
+use App\Filament\Widgets\RevenueChart;
 
 class SalesDashboard extends \Filament\Pages\Dashboard
 {
@@ -20,11 +24,13 @@ class SalesDashboard extends \Filament\Pages\Dashboard
     {
         return [
             FinanceOverview::class,
-            TransactionWIdget::class,
-            FinancialsChart::class,
-            GrossProfitChart::class,
-            WasteMarginChart::class,
+            RevenueChart::class
 
+            // TransactionOverview::class,
+            // FinancialsChart::class,
+            // GrossProfitChart::class,
+
+            // WasteMarginChart::class,
             // StockValueCompositionChart::class,
             // LowestStockWidget::class
         ];
