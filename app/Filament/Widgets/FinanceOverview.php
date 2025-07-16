@@ -4,32 +4,26 @@ namespace App\Filament\Widgets;
 
 use Carbon\Carbon;
 use App\Models\Transaction;
-use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
-use Illuminate\Support\Number;
 use App\Enums\TransactionStatus;
-use App\Traits\WidgetFormattingHelper;
-use Filament\Support\Enums\IconPosition;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class FinanceOverview extends BaseWidget
 {
-    use WidgetFormattingHelper;
 
     /**
-     * Metode utama untuk menghasilkan statistik.
-     * Mengorkestrasi pengambilan data, perhitungan, dan pembuatan kartu.
+     * Fungsi utama untuk menghasilkan statistik.
      *
      * @return array<Stat>
      */
     protected function getStats(): array
     {
-        // $fakeNow = Carbon::create(2025, 5, 31);
+        // $fakeNow = Carbon::create(2025, 6, 30);
         // Carbon::setTestNow($fakeNow);
 
         try {
-            // Tentukan periode waktu untuk bulan ini dan bulan lalu
+            // Periode waktu untuk bulan ini dan bulan lalu
             $currentMonthStart = Carbon::now()->startOfMonth();
             $currentMonthEnd = Carbon::now()->endOfMonth();
             $previousMonthStart = Carbon::now()->subMonthNoOverflow()->startOfMonth();
@@ -47,13 +41,10 @@ class FinanceOverview extends BaseWidget
             $currentMonthGrossProfit = $currentMonthRevenue - $currentMonthPurchases;
             $previousMonthGrossProfit = $previousMonthRevenue - $previousMonthPurchases;
 
-            // dd([$currentMonthGrossProfit, $previousMonthGrossProfit]);
-
-            // Buat dan kembalikan kartu statistik
             return [
+                $this->createStatCard('Estimasi Laba Kotor Bulan Ini', $currentMonthGrossProfit, $previousMonthGrossProfit),
                 $this->createStatCard('Pendapatan Bulan Ini', $currentMonthRevenue, $previousMonthRevenue),
                 $this->createStatCard('Pembelian Bulan Ini', $currentMonthPurchases, $previousMonthPurchases),
-                $this->createStatCard('Estimasi Laba Kotor Bulan Ini', $currentMonthGrossProfit, $previousMonthGrossProfit),
             ];
         } finally {
             // --- PENTING: Selalu reset waktu setelah selesai ---
@@ -75,9 +66,7 @@ class FinanceOverview extends BaseWidget
         return Transaction::query()
             ->where('type', $type->value)
             ->where('status', TransactionStatus::COMPLETE->value)
-            // Menggunakan updated_at karena status complete diatur saat itu.
-            // Jika Anda memiliki 'completed_at', itu lebih baik.
-            ->whereBetween('updated_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('total_price');
     }
 
@@ -93,8 +82,6 @@ class FinanceOverview extends BaseWidget
     private function createStatCard(string $label, float $currentValue, float $previousValue): Stat
     {
         $percentageChange = $this->calculatePercentageChange($currentValue, $previousValue);
-
-        // Format mata uang ke Rupiah tanpa angka desimal (koma).
         $formattedValue = 'Rp ' . number_format($currentValue, 0, ',', '.');
 
         $stat = Stat::make($label, $formattedValue);
@@ -110,7 +97,6 @@ class FinanceOverview extends BaseWidget
         $isIncrease = $percentageChange > 0;
         $descriptionText = sprintf(
             '%s%% %s dari bulan lalu',
-            // Menggunakan format angka Indonesia (koma untuk desimal)
             number_format(abs($percentageChange), 2, ',', '.'),
             $isIncrease ? 'kenaikan' : 'penurunan'
         );
@@ -123,7 +109,6 @@ class FinanceOverview extends BaseWidget
 
     /**
      * Menghitung persentase perubahan antara dua nilai.
-     * Menangani kasus pembagian dengan nol dan nilai negatif secara aman.
      *
      * @param float $current Nilai saat ini.
      * @param float $previous Nilai sebelumnya.
@@ -145,8 +130,6 @@ class FinanceOverview extends BaseWidget
         }
 
         $result = ($current - $previous) / abs($previous) * 100;
-
-        // return (($current - $previous) / $previous) * 100;
         return $result;
     }
 }

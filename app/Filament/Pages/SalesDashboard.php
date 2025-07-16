@@ -10,6 +10,7 @@ use App\Filament\Widgets\NetCashFlowChart;
 use App\Filament\Widgets\WasteMarginChart;
 use App\Filament\Widgets\TransactionOverview;
 use App\Filament\Widgets\CashFlowSectionHeader;
+use App\Filament\Widgets\PurchaseChart;
 use App\Filament\Widgets\RevenueChart;
 
 class SalesDashboard extends \Filament\Pages\Dashboard
@@ -24,11 +25,12 @@ class SalesDashboard extends \Filament\Pages\Dashboard
     {
         return [
             FinanceOverview::class,
-            RevenueChart::class
+            GrossProfitChart::class,
+            RevenueChart::class,
+            PurchaseChart::class,
 
             // TransactionOverview::class,
             // FinancialsChart::class,
-            // GrossProfitChart::class,
 
             // WasteMarginChart::class,
             // StockValueCompositionChart::class,

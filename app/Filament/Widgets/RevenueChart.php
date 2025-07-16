@@ -53,10 +53,12 @@ class RevenueChart extends ApexChartWidget
 
         return $heading;
     }
-    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) yang telah selesai dari transaksi yang telah selesai baik lunas maupun belum lunas';
+    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) dari transaksi yang telah selesai.';
 
-
-
+    /**
+     * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
+     * @return Collection tahun
+     */
     protected static function getAvailableYear(): Collection
     {
         return Transaction::query()
@@ -66,6 +68,11 @@ class RevenueChart extends ApexChartWidget
             ->pluck('year', 'year');
     }
 
+    /**
+     * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data transaksi
+     * @param   int $year
+     * @return  Collection bulan
+     */
     protected static function getAvailableMonth(int $year): Collection
     {
         $months = Transaction::query()
@@ -86,6 +93,9 @@ class RevenueChart extends ApexChartWidget
         return $months;
     }
 
+    /**
+     * Filter
+     */
     protected function getFormSchema(): array
     {
         return [
@@ -119,7 +129,11 @@ class RevenueChart extends ApexChartWidget
         ];
     }
 
-    protected function getRevenueYearly()
+    /**
+     * Mendapatkan data Pendapatan Tahunan
+     * @return Collection pendapatan per tahun
+     */
+    protected function getRevenueYearly(): Collection
     {
         $yearlyRevenue = Transaction::query()
             ->where('type', '=', TransactionType::SELL)
@@ -131,6 +145,11 @@ class RevenueChart extends ApexChartWidget
         return $yearlyRevenue;
     }
 
+    /**
+     * Mendapatkan data Pendapatan Bulanan dalam tahun tertentu
+     * @param   int $year
+     * @return  Collection pendapatan per bulan
+     */
     protected function getRevenueMonthly(int $year): Collection
     {
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
@@ -161,6 +180,12 @@ class RevenueChart extends ApexChartWidget
         return $result;
     }
 
+    /**
+     * Mendapatkan data Pendapatan Mingguan dalam bulan dan tahun tertentu
+     * @param   int $month
+     * @param   int $year
+     * @return  Collection pendapatan per minggu
+     */
     protected function getRevenueWeekly(int $month, int $year): Collection
     {
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
@@ -192,17 +217,9 @@ class RevenueChart extends ApexChartWidget
         return $result;
     }
 
-    /**
-     * Chart options (series, labels, types, size, animations...)
-     * https://apexcharts.com/docs/options
-     *
-     * @return array
-     */
-    protected function getOptions(): array
+    protected function getChartData(string $period): Collection
     {
-        $period = $this->filterFormData['period'];
-
-        $data = [];
+        $data = collect();
         switch ($period) {
             case 'yearly':
                 $data = $this->getRevenueYearly();
@@ -220,6 +237,14 @@ class RevenueChart extends ApexChartWidget
                 break;
         }
 
+        return $data;
+    }
+
+    protected function getOptions(): array
+    {
+        $period = $this->filterFormData['period'];
+        $data = $this->getChartData($period);
+
         return [
             'chart' => [
                 'type' => 'area',
@@ -228,7 +253,7 @@ class RevenueChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'RevenueChart',
+                    'name' => 'Pendapatan',
                     'data' => $data->values()->all(),
                 ],
             ],
