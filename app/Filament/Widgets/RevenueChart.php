@@ -53,7 +53,7 @@ class RevenueChart extends ApexChartWidget
 
         return $heading;
     }
-    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) dari transaksi yang telah selesai.';
+    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) dari transaksi yang telah selesai';
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
@@ -275,7 +275,7 @@ class RevenueChart extends ApexChartWidget
                     'text' => 'Rupiah (Rp)'
                 ]
             ],
-            'colors' => ['#3b82f6'],
+            'colors' => ['#7e50cc'],
             'stroke' => [
                 'curve' => 'smooth',
             ],

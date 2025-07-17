@@ -54,7 +54,7 @@ class GrossProfitChart extends ApexChartWidget
         return $heading;
     }
 
-    protected static ?string $footer = 'Menampilkan estimasi laba kotor dari transaksi yang telah selesai';
+    protected static ?string $footer = 'Menampilkan estimasi laba kotor (Pendapatan - Pembelian) dari transaksi yang telah selesai';
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
@@ -131,6 +131,83 @@ class GrossProfitChart extends ApexChartWidget
     }
 
     /**
+     * Mendapatkan data laba kotor Tahunan
+     * @return Collection laba kotor per tahun
+     */
+    protected function getGrossProfitYearly(): Collection
+    {
+        $yearlyRevenue = Transaction::query()
+            ->where('status', '=', TransactionStatus::COMPLETE)
+            ->selectRaw("
+                YEAR(created_at) as year,
+                SUM(
+                    CASE
+                        WHEN type = ? THEN total_price
+                        ELSE 0
+                    END
+                ) -
+                SUM(
+                    CASE
+                        WHEN type = ? THEN total_price
+                        ELSE 0
+                    END
+                ) as profit
+            ", [TransactionType::SELL, TransactionType::PURCHASE])
+            ->groupBy('year')
+            ->pluck('profit', 'year');
+
+        return $yearlyRevenue;
+    }
+
+    /**
+     * Mendapatkan data laba kotor Bulanan dalam tahun tertentu
+     * @param   int $year
+     * @return  Collection laba kotor per bulan
+     */
+    protected function getGrossProfitMonthly(int $year): Collection
+    {
+        $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
+        $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
+        $monthlyGrossProfit = Transaction::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '=', TransactionStatus::COMPLETE)
+            ->selectRaw("
+                DATE_FORMAT(created_at, '%Y-%m') as month_key,
+                SUM(
+                    CASE
+                        WHEN type = ? THEN total_price
+                        ELSE 0
+                    END
+                ) -
+                SUM(
+                    CASE
+                        WHEN type = ? THEN total_price
+                        ELSE 0
+                    END
+                ) as profit
+            ", [TransactionType::SELL, TransactionType::PURCHASE])
+            ->groupBy('month_key')
+            ->pluck('profit', 'month_key');
+
+        $period = CarbonPeriod::create($startDate, '1 month', $endDate);
+        $monthTemplate = collect();
+        foreach ($period as $date) {
+            $month = $date->startOfMonth()->format('Y-m');
+            $monthTemplate[$month] = 0;
+        }
+
+        $result = $monthTemplate->merge($monthlyGrossProfit);
+        $result = $result->mapWithKeys(function ($total, $date) {
+            $formattedDate = Carbon::parse($date)
+                ->locale('id')
+                ->translatedFormat('M Y');
+            return [$formattedDate => $total];
+        });
+
+        return $result;
+    }
+
+    /**
      * Mendapatkan data laba kotor Mingguan dalam bulan dan tahun tertentu
      * @param   int $month
      * @param   int $year
@@ -185,12 +262,12 @@ class GrossProfitChart extends ApexChartWidget
         $data = collect();
         switch ($period) {
             case 'yearly':
-                // $data = $this->getPurchaseYearly();
+                $data = $this->getGrossProfitYearly();
                 break;
 
             case 'monthly':
                 $year = $year = $this->filterFormData['year'];
-                // $data = $this->getPurchaseMonthly($year);
+                $data = $this->getGrossProfitMonthly($year);
                 break;
 
             default:
@@ -216,7 +293,7 @@ class GrossProfitChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Pembelian',
+                    'name' => 'Laba Kotor',
                     'data' => $data->values()->all(),
                 ],
             ],
@@ -238,7 +315,7 @@ class GrossProfitChart extends ApexChartWidget
                     'text' => 'Rupiah (Rp)'
                 ]
             ],
-            'colors' => ['#7008e7'],
+            'colors' => ['#3b82f6'],
             'stroke' => [
                 'curve' => 'smooth',
             ],
