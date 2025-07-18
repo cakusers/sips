@@ -357,21 +357,25 @@ class TransactionResource extends Resource
                     ->label('Pelanggan')
                     ->searchable()
                     ->sortable()
-                    ->limit(15),
+                    ->limit(15)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->alignment(Alignment::Center)
                     ->formatStateUsing(fn($state) => $state === TransactionType::SELL ? 'Jual' : 'Beli')
+                    ->toggleable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Harga Total')
                     ->numeric()
                     ->sortable()
                     ->alignment(Alignment::Center)
+                    ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->alignment(Alignment::Center)
+                    ->toggleable()
                     ->color(
                         fn($state): string => match ($state) {
                             TransactionStatus::NEW => 'info',
@@ -395,6 +399,7 @@ class TransactionResource extends Resource
                     ->label("Status Pembayaran")
                     ->badge()
                     ->alignment(Alignment::Center)
+                    ->toggleable()
                     ->color(
                         fn($state): string => match ($state) {
                             PaymentStatus::PAID => 'success',
@@ -433,13 +438,13 @@ class TransactionResource extends Resource
                 Filter::make('created_at')
                     ->form([
                         DatePicker::make('created_from')
-                            ->label('Tanggal Mulai')
+                            ->label('Transaksi Pada Tanggal')
                             ->placeholder('dd/mm/yy')
                             ->displayFormat('d F Y')
                             ->maxDate(fn(Get $get) => $get('created_until') ?? now())
                             ->live(),
                         DatePicker::make('created_until')
-                            ->label('Tanggal Selesai')
+                            ->label('Transaksi Hingga Tanggal')
                             ->placeholder('dd/mm/yy')
                             ->displayFormat('d F Y')
                             ->minDate(fn(Get $get) => $get('created_from'))
