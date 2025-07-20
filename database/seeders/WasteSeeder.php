@@ -17,8 +17,10 @@ class WasteSeeder extends Seeder
     public function run(): void
     {
         $plastikCategory = WasteCategory::where('name', 'like', '%' . 'botol' . '%')->first();
-        $kertasCategory = WasteCategory::where('name', 'kardus')->first();
-        $logamCategory = WasteCategory::where('name', 'logam')->first();
+        $kertasCategory = WasteCategory::where('name', 'like', '%' . 'kardus' . '%')->first();
+        $logamCategory = WasteCategory::where('name', 'like', '%' . 'logam' . '%')->first();
+        $campuranCategory = WasteCategory::where('name', 'like', '%' . 'campuran' . '%')->first();
+
 
         Waste::create([
             'name' => 'Botol PET Bening',
@@ -34,6 +36,11 @@ class WasteSeeder extends Seeder
             'name' => 'Kaleng Aluminium',
             'stock_in_kg' => 0,
             'waste_category_id' => $logamCategory->id,
+        ]);
+        Waste::create([
+            'name' => 'Kaleng Aluminium',
+            'stock_in_kg' => 0,
+            'waste_category_id' => $campuranCategory->id,
         ]);
     }
 }

@@ -353,6 +353,10 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('number')
+                    ->label('Nomer Transaksi')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('customer.name')
                     ->label('Pelanggan')
                     ->searchable()

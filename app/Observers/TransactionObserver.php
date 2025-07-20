@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\MovementType;
 use App\Models\Transaction;
+use Illuminate\Support\Str;
 use App\Models\StockMovement;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
@@ -12,6 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class TransactionObserver
 {
+    /**
+     * Handle the Transaction "creating" event.
+     */
+    public function creating(Transaction $transaction): void
+    {
+        if (empty($transaction->number)) {
+            $transaction->number = $this->generateTransactionNumber();
+        }
+    }
+
     /**
      * Handle the Transaction "created" event.
      */
@@ -72,6 +83,25 @@ class TransactionObserver
     }
 
     /**
+     * Buat Nomer Transaksi
+     * @return string nomer transaksi
+     */
+    private function generateTransactionNumber(): string
+    {
+        $prefix = 'TRX-';
+        $time = now()->format('Ymd');
+        $format = $prefix . $time;
+
+        $lastTransaction = Transaction::where('number', 'like', $format . '%')
+            ->latest('number')
+            ->first();
+
+        $newNumber = $lastTransaction ? (int) Str::afterLast($lastTransaction->number, '-') + 1 : 1;
+
+        return $format . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Menyesuaikan stok dan mencatat pergerakan stok berdasarkan tipe perubahan transaksi.
      */
     private function adjustStockAndLogMovement(Transaction $transaction, string $triggerType): void
@@ -88,12 +118,12 @@ class TransactionObserver
                         // Transaksi JUAL menjadi COMPLETE: Stok BERKURANG
                         $waste->stock_in_kg -= $quantity;
                         $movementType = MovementType::SELLOUT;
-                        $descText = 'Penjualan selesai (Transaksi ID: ' . $transaction->id . ')';
+                        $descText = 'Penjualan (Nomer Transaksi: ' . $transaction->number . ')';
                     } elseif ($transaction->type === TransactionType::PURCHASE) {
                         // Transaksi BELI menjadi COMPLETE: Stok BERTAMBAH
                         $waste->stock_in_kg += $quantity;
                         $movementType = MovementType::PURCHASEIN;
-                        $descText = 'Pembelian selesai (Transaksi ID: ' . $transaction->id . ')';
+                        $descText = 'Pembelian (Nomer Transaksi: ' . $transaction->number . ')';
                     }
                 } elseif ($triggerType === 'returned') {
                     // Hanya terjadi jika sebelumnya COMPLETE
@@ -102,13 +132,13 @@ class TransactionObserver
                         // Ini membalik efek dari penjualan yang sudah selesai
                         $waste->stock_in_kg += $quantity;
                         $movementType = MovementType::RETURNEDIN;
-                        $descText = 'Pengembalian dari penjualan (Transaksi ID: ' . $transaction->id . ')';
+                        $descText = 'Pengembalian dari penjualan (Nomer Transaksi: ' . $transaction->number . ')';
                     } elseif ($transaction->type === TransactionType::PURCHASE) {
                         // Transaksi BELI di-RETURNED: Stok BERKURANG kembali
                         // Ini membalik efek dari pembelian yang sudah selesai
                         $waste->stock_in_kg -= $quantity;
                         $movementType = MovementType::RETURNEDOUT;
-                        $descText = 'Pengembalian dari pembelian (Transaksi ID: ' . $transaction->id . ')';
+                        $descText = 'Pengembalian dari pembelian (Nomer Transaksi: ' . $transaction->number . ')';
                     }
                 }
 

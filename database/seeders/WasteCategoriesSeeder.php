@@ -20,6 +20,7 @@ class WasteCategoriesSeeder extends Seeder
             ['name' => 'Kertas', 'emission_factor' => 0.609],
             ['name' => 'Kardus', 'emission_factor' => 0.46],
             ['name' => 'Logam', 'emission_factor' => 2.39],
+            ['name' => 'Campuran', 'emission_factor' => 0],
         ];
 
         foreach ($categories as $category) {

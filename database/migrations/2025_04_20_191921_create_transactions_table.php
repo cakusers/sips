@@ -16,6 +16,7 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->string('number', 18)->unique();
             $table->enum('type', [TransactionType::PURCHASE->value, TransactionType::SELL->value]);
             $table->enum('status', [
                 TransactionStatus::NEW->value,
