@@ -10,10 +10,14 @@ class ListStockMovements extends ListRecords
 {
     protected static string $resource = StockMovementResource::class;
 
-    protected function getHeaderActions(): array
+    public function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\Action::make('manual_stock_adjustment')
+                ->label('Sesuaikan Stok')
+                ->icon('heroicon-o-pencil-square')
+                ->color('primary')
+                ->url(AdjustStockMovement::getUrl())
         ];
     }
 }

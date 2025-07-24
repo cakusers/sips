@@ -9,14 +9,12 @@ use Filament\Tables\Table;
 use App\Enums\MovementType;
 use App\Models\StockMovement;
 use Filament\Resources\Resource;
-use App\Filament\Pages\AdjustStock;
-use App\Filament\Resources\MixedWasteResource\Pages\ListMixedWastes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Actions;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\StockMovementResource\Pages;
-use App\Filament\Resources\StockMovementResource\RelationManagers;
-use Filament\Forms\Components\Tabs\Tab;
+use App\Filament\Resources\StockMovementResource\Pages\AdjustStockMovement;
 
 class StockMovementResource extends Resource
 {
@@ -37,6 +35,7 @@ class StockMovementResource extends Resource
     {
         return false;
     }
+
 
     public static function form(Form $form): Form
     {
@@ -176,16 +175,11 @@ class StockMovementResource extends Resource
                 Tables\Actions\ViewAction::make(),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('mixed_waste_list')
-                    ->label('Sampah Campuran')
-                    ->icon('heroicon-o-archive-box')
-                    ->color('amber')
-                    ->url(ListMixedWastes::getUrl()),
-                Tables\Actions\Action::make('manual_stock_adjustment')
-                    ->label('Sesuaikan Stok')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('primary')
-                    ->url(AdjustStock::getUrl()),
+                // Tables\Actions\Action::make('manual_stock_adjustment')
+                //     ->label('Sesuaikan Stok')
+                //     ->icon('heroicon-o-pencil-square')
+                //     ->color('primary')
+                //     ->url(AdjustStockMovement::getUrl()),
             ])
             ->bulkActions([
                 // Tables\Actions\BulkActionGroup::make([]),
@@ -205,6 +199,7 @@ class StockMovementResource extends Resource
             'index' => Pages\ListStockMovements::route('/'),
             'create' => Pages\CreateStockMovement::route('/create'),
             'edit' => Pages\EditStockMovement::route('/{record}/edit'),
+            'adjustment' => Pages\AdjustStockMovement::route('/stock-adjustment')
         ];
     }
 

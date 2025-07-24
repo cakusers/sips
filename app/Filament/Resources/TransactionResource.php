@@ -20,30 +20,21 @@ use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
-use Livewire\Component as Livewire;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\Alignment;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Filters\Indicator;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
-use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
-
-use function PHPUnit\Framework\isNull;
 
 class TransactionResource extends Resource
 {
@@ -51,6 +42,7 @@ class TransactionResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
     protected static ?string $navigationLabel = 'Data Transaksi';
     protected static ?string $label = 'Data Transaksi';
+    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
     protected static ?int $navigationSort = 1;
 
     protected static array $transactionType = [

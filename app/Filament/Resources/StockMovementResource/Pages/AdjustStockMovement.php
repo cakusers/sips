@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Filament\Pages;
+namespace App\Filament\Resources\StockMovementResource\Pages;
 
 use App\Models\Waste;
 use Filament\Forms\Set;
 use Filament\Forms\Form;
-use Filament\Pages\Page;
+use Filament\Resources\Pages\Page;
 use App\Enums\MovementType;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Radio;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
@@ -18,18 +17,17 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TimePicker;
 use Illuminate\Validation\ValidationException;
 use Filament\Forms\Concerns\InteractsWithForms;
 use App\Filament\Resources\StockMovementResource;
 
 
-class AdjustStock extends Page implements HasForms
+class AdjustStockMovement extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static string $resource = StockMovementResource::class;
+    // protected static bool $shouldRegisterNavigation = false;
     protected static string $view = 'filament.pages.adjust-stock';
     protected static ?string $title = 'Penyesuaian Stok';
     public ?array $data = [];

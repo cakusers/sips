@@ -16,13 +16,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\MixedWasteResource\Pages;
-use App\Filament\Resources\MixedWasteResource\Pages\SortMixedWaste;
 use App\Filament\Resources\MixedWasteResource\RelationManagers;
 
 class MixedWasteResource extends Resource
 {
+
     protected static ?string $model = TransactionWaste::class;
-    protected static bool $shouldRegisterNavigation = false;
+    // protected static bool $shouldRegisterNavigation = false;
+    public static ?string $label = 'Daftar Sampah Campuran';
+    public static ?string $navigationLabel = 'Sortir Sampah Campuran';
+    public static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
+    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
+    public static ?int $navigationSort = 2;
+
     public static function canCreate(): bool
     {
         return false;
@@ -31,8 +37,6 @@ class MixedWasteResource extends Resource
     {
         return false;
     }
-
-    public static ?string $label = 'Sampah Campuran';
 
     public static function form(Form $form): Form
     {
@@ -73,11 +77,7 @@ class MixedWasteResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
