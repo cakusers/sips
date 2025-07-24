@@ -109,6 +109,7 @@ class TransactionObserver
         DB::transaction(function () use ($transaction, $triggerType) {
             foreach ($transaction->transactionWastes()->get() as $item) {
                 $waste = $item->waste;
+                $currentQty = $waste->stock_in_kg;
                 $quantity = $item->qty_in_kg;
                 $movementType = '';
                 $descText = '';
@@ -146,6 +147,7 @@ class TransactionObserver
                 StockMovement::create([
                     'waste_id' => $waste->id,
                     'type' => $movementType,
+                    'before_movement_kg' => $currentQty,
                     'quantity_change_kg' => $quantity,
                     'current_stock_after_movement_kg' => $waste->stock_in_kg,
                     'description' => $descText,

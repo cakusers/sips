@@ -23,6 +23,7 @@ class TransactionSeederJuly extends Seeder
         $botol = Waste::find(1);
         $kardus = Waste::find(2);
         $kaleng = Waste::find(3);
+        $campuran = Waste::find(4);
         $customer = Customer::all();
 
         /**
@@ -161,6 +162,31 @@ class TransactionSeederJuly extends Seeder
         $sampah = $kaleng;
         $tipe = TransactionType::SELL;
         $harga = $this->getPrice($tipe, $sampah);
+        $qty = 10;
+
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->random()->id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create(2025, 7, 12);
+        $sampah = $campuran;
+        $tipe = TransactionType::PURCHASE;
+        $harga = 0;
         $qty = 10;
 
         $transaksi = Transaction::create([

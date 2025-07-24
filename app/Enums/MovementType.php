@@ -10,4 +10,5 @@ enum MovementType: string
     case RETURNEDOUT    = 'returned_out';           // Keluar dari transaksi pembelian yang dikembalikan
     case MANUALIN       = 'manual_adjustment_in';   // Masuk dari penyesuaian manual (misalnya: koreksi, ditemukan kembali)
     case MANUALOUT      = 'manual_adjustment_out';  // Keluar dari penyesuaian manual (misalnya: rusak, hilang, koreksi)
+    case SORTINGIN      = 'sorting_in';             // Masuk dari pemilahan sampah campuran (Hasil Pemilahan)
 }

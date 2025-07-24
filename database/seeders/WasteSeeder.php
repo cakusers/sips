@@ -38,8 +38,8 @@ class WasteSeeder extends Seeder
             'waste_category_id' => $logamCategory->id,
         ]);
         Waste::create([
-            'name' => 'Kaleng Aluminium',
-            'stock_in_kg' => 0,
+            'name' => 'Campuran',
+            'stock_in_kg' => 10,
             'waste_category_id' => $campuranCategory->id,
         ]);
     }

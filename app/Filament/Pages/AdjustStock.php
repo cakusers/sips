@@ -95,7 +95,7 @@ class AdjustStock extends Page implements HasForms
                                         'Hilang / Tidak Ditemukan' => 'Hilang / Tidak Ditemukan',
                                         'Rusak / Tidak Layak Jual' => 'Rusak / Tidak Layak Jual',
                                         'Digunakan Internal' => 'Digunakan Internal',
-                                        'Lain-lain' => 'Lain-lain',
+                                        'other' => 'Lain-lain',
                                     ])
                                     ->required()
                                     ->live(),
@@ -125,6 +125,7 @@ class AdjustStock extends Page implements HasForms
             if (!$waste) {
                 throw ValidationException::withMessages(['waste_id' => 'Jenis sampah tidak ditemukan.']);
             }
+            $currentQty = $waste->qty_in_kg;
 
             $quantity = $this->floatFormat($data['quantity']);
             if ($quantity <= 0) {
@@ -140,6 +141,7 @@ class AdjustStock extends Page implements HasForms
                     throw ValidationException::withMessages(['quantity' => 'Jumlah pengurangan melebihi stok yang tersedia. Stok saat ini: ' . $waste->stock_in_kg . ' Kg']);
                 }
                 $waste->stock_in_kg -= $quantity;
+                $quantity = -$quantity;
                 $movementType = MovementType::MANUALOUT;
             }
 
@@ -149,6 +151,7 @@ class AdjustStock extends Page implements HasForms
             StockMovement::create([
                 'waste_id' => $data['waste_id'],
                 'type' => $movementType,
+                'before_movement_kg' => $currentQty,
                 'quantity_change_kg' => $quantity,
                 'current_stock_after_movement_kg' => $waste->stock_in_kg,
                 'description' => $data['reason_type'] === 'other' ? $data['reason_detail'] : $data['reason_type'],

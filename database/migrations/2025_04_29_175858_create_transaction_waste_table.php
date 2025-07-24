@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('waste_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('transaction_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('sorted_from_id')->nullable()->constrained('transaction_waste')->cascadeOnDelete();
+            $table->boolean('is_sorted')->default(false);
             $table->float('qty_in_kg');
             $table->integer('unit_price');
             $table->integer('sub_total_price');

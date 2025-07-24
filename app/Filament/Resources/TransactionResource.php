@@ -196,6 +196,8 @@ class TransactionResource extends Resource
                         ->minItems(1)
                         ->columns(5)
                         ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                        ->distinct()
+                        ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                         ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
                             $stock = Waste::find($data['waste_id'])->stock_in_kg;
                             $stock = self::strFormat($stock);

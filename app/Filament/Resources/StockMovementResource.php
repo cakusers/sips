@@ -10,11 +10,13 @@ use App\Enums\MovementType;
 use App\Models\StockMovement;
 use Filament\Resources\Resource;
 use App\Filament\Pages\AdjustStock;
+use App\Filament\Resources\MixedWasteResource\Pages\ListMixedWastes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\StockMovementResource\Pages;
 use App\Filament\Resources\StockMovementResource\RelationManagers;
+use Filament\Forms\Components\Tabs\Tab;
 
 class StockMovementResource extends Resource
 {
@@ -22,8 +24,8 @@ class StockMovementResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Pengelolaan Sampah';
-    protected static ?string $navigationLabel = 'Riwayat Stok';
-    protected static ?string $label = 'Riwayat Stok';
+    protected static ?string $navigationLabel = 'Data Stok';
+    protected static ?string $label = 'Data Stok';
     protected static ?int $navigationSort = 3;
 
     public static function canEdit(Model $record): bool
@@ -88,16 +90,25 @@ class StockMovementResource extends Resource
                     ->label('Tanggal & Waktu')
                     ->dateTime('j F o, H.i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('transaction.number')
+                    ->label('Nomer Transaksi')
+                    ->toggleable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('waste.name')
                     ->label('Nama Sampah')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('before_movement_kg')
+                    ->label('Stok Awal (Kg)')
+                    ->alignCenter()
+                    ->formatStateUsing(fn($state) => self::strFormat($state)),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe Perubahan')
                     ->badge()
                     ->color(fn(MovementType $state) => match ($state) {
                         MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN => 'info',
                         MovementType::SELLOUT, MovementType::RETURNEDOUT, MovementType::MANUALOUT => 'amber',
+                        MovementType::SORTINGIN => 'purple',
                         default => 'secondary',
                     })
                     ->formatStateUsing(fn(MovementType $state) => match ($state) {
@@ -107,29 +118,27 @@ class StockMovementResource extends Resource
                         MovementType::RETURNEDOUT => 'Pengembalian Keluar',
                         MovementType::MANUALIN => 'Penyesuaian Manual Masuk',
                         MovementType::MANUALOUT => 'Penyesuaian Manual Keluar',
+                        MovementType::SORTINGIN => 'Perubahan Setelah Dipilah',
                     }),
                 Tables\Columns\TextColumn::make('quantity_change_kg')
-                    ->label('Jumlah (Kg)')
+                    ->label('Perubahan (Kg)')
+                    ->alignCenter()
                     ->formatStateUsing(
-                        fn(string $state, StockMovement $record): string =>
-                        in_array($record->type, [MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN]) ? '+' . self::strFormat($state) : '-' . self::strFormat($state)
+                        fn(string $state): string =>
+                        (float) $state > 0.0 ? '+' . self::strFormat($state) : $state
                     )
                     ->color(
-                        fn(StockMovement $record): string =>
-                        in_array($record->type, [MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN]) ? 'success' : 'danger'
-                    )
-                    ->sortable(),
+                        fn(string $state): string =>
+                        (float) $state > 0.0 ? 'success' : 'danger'
+                    ),
                 Tables\Columns\TextColumn::make('current_stock_after_movement_kg')
                     ->label('Stok Akhir (Kg)')
-                    ->formatStateUsing(fn($state) => self::strFormat($state))
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Deskripsi')
-                    ->words(10)
-                    ->tooltip(fn(string $state): string => $state),
-                Tables\Columns\TextColumn::make('transaction_id')
-                    ->label('ID Transaksi')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->alignCenter()
+                    ->formatStateUsing(fn($state) => self::strFormat($state)),
+                // Tables\Columns\TextColumn::make('description')
+                //     ->label('Deskripsi')
+                //     ->words(3)
+                //     ->tooltip(fn(string $state): string => $state),,
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Dilakukan Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -144,6 +153,7 @@ class StockMovementResource extends Resource
                         MovementType::RETURNEDOUT->value => 'Pengembalian Keluar',
                         MovementType::MANUALIN->value => 'Penyesuaian Manual Masuk',
                         MovementType::MANUALOUT->value => 'Penyesuaian Manual Keluar',
+                        MovementType::SORTINGIN->value  => 'Perubahan Setelah Dipilah',
                     ])
                     ->label('Filter Tipe Pergerakan'),
                 Tables\Filters\SelectFilter::make('waste_id')
@@ -166,6 +176,11 @@ class StockMovementResource extends Resource
                 Tables\Actions\ViewAction::make(),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('mixed_waste_list')
+                    ->label('Sampah Campuran')
+                    ->icon('heroicon-o-archive-box')
+                    ->color('amber')
+                    ->url(ListMixedWastes::getUrl()),
                 Tables\Actions\Action::make('manual_stock_adjustment')
                     ->label('Sesuaikan Stok')
                     ->icon('heroicon-o-pencil-square')

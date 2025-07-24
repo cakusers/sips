@@ -18,6 +18,7 @@ class WastePriceSeeder extends Seeder
         $botolPet = Waste::where('name', 'Botol PET Bening')->first();
         $kardus = Waste::where('name', 'Kardus Bekas')->first();
         $kaleng = Waste::where('name', 'Kaleng Aluminium')->first();
+        $campuran = Waste::where('name', 'Campuran')->first();
 
         $priceApril = Carbon::create(2025, 4, 1, 14, 0, 0);
         WastePrice::create([
@@ -36,6 +37,12 @@ class WastePriceSeeder extends Seeder
             'waste_id' => $kaleng->id,
             'purchase_per_kg' => 7000,
             'selling_per_kg' => 9000,
+            'effective_start_date' => $priceApril
+        ]);
+        WastePrice::create([
+            'waste_id' => $campuran->id,
+            'purchase_per_kg' => 0,
+            'selling_per_kg' => 0,
             'effective_start_date' => $priceApril
         ]);
     }

@@ -19,8 +19,13 @@ class TransactionWasteObserver
     {
         $transaction = $transactionWaste->transaction;
 
+        if (!isset($transaction)) {
+            return;
+        }
+
         if ($transaction->status === TransactionStatus::COMPLETE) {
             $waste = $transactionWaste->waste;
+            $currentQty = $waste->stock_in_kg;
             $quantity = $transactionWaste->qty_in_kg;
             $movementType = '';
             $descText = '';
@@ -28,6 +33,7 @@ class TransactionWasteObserver
             if ($transaction->type === TransactionType::SELL) {
                 // Transaksi JUAL menjadi COMPLETE: Stok BERKURANG
                 $waste->stock_in_kg -= $quantity;
+                $quantity = -$quantity;
                 $movementType = MovementType::SELLOUT;
                 $descText = 'Penjualan (Nomer Transaksi: ' . $transaction->number . ')';
             }
@@ -43,6 +49,7 @@ class TransactionWasteObserver
             StockMovement::create([
                 'waste_id' => $waste->id,
                 'type' => $movementType,
+                'before_movement_kg' => $currentQty,
                 'quantity_change_kg' => $quantity,
                 'current_stock_after_movement_kg' => $waste->stock_in_kg,
                 'description' => $descText,

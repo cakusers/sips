@@ -10,6 +10,7 @@ class StockMovement extends Model
     protected $fillable = [
         'waste_id',
         'type',
+        'before_movement_kg',
         'quantity_change_kg',
         'current_stock_after_movement_kg',
         'description',

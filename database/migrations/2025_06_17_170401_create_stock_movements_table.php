@@ -21,8 +21,10 @@ return new class extends Migration
                 MovementType::PURCHASEIN->value,
                 MovementType::SELLOUT->value,
                 MovementType::RETURNEDIN->value,
-                MovementType::RETURNEDOUT->value
+                MovementType::RETURNEDOUT->value,
+                MovementType::SORTINGIN->value,
             ]);
+            $table->float('before_movement_kg');
             $table->float('quantity_change_kg');
             $table->float('current_stock_after_movement_kg');
             $table->text('description')->nullable();
