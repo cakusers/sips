@@ -141,14 +141,16 @@ class SortMixedWaste extends Page implements HasForms
 
         DB::transaction(function () use ($data, $transactionWaste) {
 
+            $movementType = $transactionWaste->is_sorted ? MovementType::SORTINGADJUST : MovementType::SORTINGIN;
+
             // Kurangi stok sampah campuran ketika pertama kali dipilah
             if (!$transactionWaste->is_sorted) {
                 $this->stockMovementChange(
                     $transactionWaste->waste_id,
                     -$transactionWaste->qty_in_kg,
-                    MovementType::SORTINGIN,
+                    MovementType::SORTINGOUT,
                     $transactionWaste->transaction_id,
-                    'Telah disortir dari' . $transactionWaste->transaction->number
+                    'Disortir dari transaksi' . $transactionWaste->transaction->number
                 );
             }
 
@@ -166,7 +168,7 @@ class SortMixedWaste extends Page implements HasForms
                     $this->stockMovementChange(
                         $wasteId,
                         $change, // Bisa positif (menambah) atau negatif (mengurangi)
-                        MovementType::SORTINGIN, // Tipe tetap SORTINGIN karena ini adalah hasil
+                        $movementType,
                         $transactionWaste->transaction_id,
                         'Hasil sortir dari transaksi ' . $transactionWaste->transaction->number
                     );
@@ -210,6 +212,7 @@ class SortMixedWaste extends Page implements HasForms
         $waste = Waste::findOrFail($wasteId);
         $currentStock = $waste->stock_in_kg;
         $newStock = $currentStock + $quantityChange;
+        // dd($waste, $quantityChange);
 
         StockMovement::create([
             'waste_id' => $wasteId,
@@ -217,6 +220,7 @@ class SortMixedWaste extends Page implements HasForms
             'before_movement_kg' => $currentStock,
             'quantity_change_kg' => $quantityChange,
             'current_stock_after_movement_kg' => $newStock,
+            'carbon_footprint_change_kg_co2e' => $quantityChange * $waste->category->emission_factor,
             'description' => $description,
             'transaction_id' => $transactionId,
             'user_id' => Auth::id(),

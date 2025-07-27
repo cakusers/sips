@@ -13,6 +13,7 @@ class StockMovement extends Model
         'before_movement_kg',
         'quantity_change_kg',
         'current_stock_after_movement_kg',
+        'carbon_footprint_change_kg_co2e',
         'description',
         'transaction_id',
         'user_id',

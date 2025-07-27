@@ -142,8 +142,8 @@ class TransactionObserver
                         $descText = 'Pengembalian dari pembelian (Nomer Transaksi: ' . $transaction->number . ')';
                     }
                 }
-
                 $waste->save();
+
                 StockMovement::create([
                     'waste_id' => $waste->id,
                     'type' => $movementType,
@@ -151,6 +151,7 @@ class TransactionObserver
                     'quantity_change_kg' => $quantity,
                     'current_stock_after_movement_kg' => $waste->stock_in_kg,
                     'description' => $descText,
+                    'carbon_footprint_change_kg_co2e' => $quantity * $waste->category->emission_factor,
                     'transaction_id' => $transaction->id,
                     'user_id' => Auth::id(),
                 ]);

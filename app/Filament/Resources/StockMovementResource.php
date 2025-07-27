@@ -60,6 +60,9 @@ class StockMovementResource extends Resource
                             MovementType::RETURNEDOUT->value => 'Pengembalian Keluar',
                             MovementType::MANUALIN->value => 'Penyesuaian Manual Masuk',
                             MovementType::MANUALOUT->value => 'Penyesuaian Manual Keluar',
+                            MovementType::SORTINGIN->value => 'Sortiran Masuk',
+                            MovementType::SORTINGOUT->value => 'Sortiran Keluar',
+                            MovementType::SORTINGADJUST->value => 'Penyesuaian Sortir'
                         ]),
                     Forms\Components\Select::make('user_id')
                         ->relationship('user', 'name')
@@ -106,8 +109,8 @@ class StockMovementResource extends Resource
                     ->badge()
                     ->color(fn(MovementType $state) => match ($state) {
                         MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN => 'info',
-                        MovementType::SELLOUT, MovementType::RETURNEDOUT, MovementType::MANUALOUT => 'amber',
-                        MovementType::SORTINGIN => 'purple',
+                        MovementType::SELLOUT, MovementType::RETURNEDOUT, MovementType::MANUALOUT, MovementType::SORTINGOUT => 'amber',
+                        MovementType::SORTINGIN, MovementType::SORTINGADJUST => 'purple',
                         default => 'secondary',
                     })
                     ->formatStateUsing(fn(MovementType $state) => match ($state) {
@@ -117,7 +120,9 @@ class StockMovementResource extends Resource
                         MovementType::RETURNEDOUT => 'Pengembalian Keluar',
                         MovementType::MANUALIN => 'Penyesuaian Manual Masuk',
                         MovementType::MANUALOUT => 'Penyesuaian Manual Keluar',
-                        MovementType::SORTINGIN => 'Perubahan Setelah Dipilah',
+                        MovementType::SORTINGIN => 'Sortiran Masuk',
+                        MovementType::SORTINGOUT => 'Sortiran Keluar',
+                        MovementType::SORTINGADJUST => 'Penyesuaian Sortir',
                     }),
                 Tables\Columns\TextColumn::make('quantity_change_kg')
                     ->label('Perubahan (Kg)')
@@ -152,7 +157,9 @@ class StockMovementResource extends Resource
                         MovementType::RETURNEDOUT->value => 'Pengembalian Keluar',
                         MovementType::MANUALIN->value => 'Penyesuaian Manual Masuk',
                         MovementType::MANUALOUT->value => 'Penyesuaian Manual Keluar',
-                        MovementType::SORTINGIN->value  => 'Perubahan Setelah Dipilah',
+                        MovementType::SORTINGIN->value => 'Sortiran Masuk',
+                        MovementType::SORTINGOUT->value => 'Sortiran Keluar',
+                        MovementType::SORTINGADJUST->value => 'Penyesuaian Sortir',
                     ])
                     ->label('Filter Tipe Pergerakan'),
                 Tables\Filters\SelectFilter::make('waste_id')

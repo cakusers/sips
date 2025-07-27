@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('stock_movements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('waste_id')->constrained()->cascadeOnDelete();
             $table->enum('type', [
                 MovementType::MANUALIN->value,
                 MovementType::MANUALOUT->value,
@@ -23,11 +22,15 @@ return new class extends Migration
                 MovementType::RETURNEDIN->value,
                 MovementType::RETURNEDOUT->value,
                 MovementType::SORTINGIN->value,
+                MovementType::SORTINGOUT->value,
+                MovementType::SORTINGADJUST->value,
             ]);
             $table->float('before_movement_kg');
             $table->float('quantity_change_kg');
             $table->float('current_stock_after_movement_kg');
             $table->text('description')->nullable();
+            $table->float('carbon_footprint_change_kg_co2e')->default(0);
+            $table->foreignId('waste_id')->constrained()->cascadeOnDelete();
             $table->foreignId('transaction_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();

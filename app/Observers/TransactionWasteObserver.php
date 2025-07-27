@@ -23,42 +23,45 @@ class TransactionWasteObserver
             return;
         }
 
-        if ($transaction->status === TransactionStatus::COMPLETE) {
-            $waste = $transactionWaste->waste;
-            $currentQty = $waste->stock_in_kg;
-            $quantity = $transactionWaste->qty_in_kg;
-            $movementType = '';
-            $descText = '';
+        DB::transaction(function () use ($transaction, $transactionWaste) {
+            if ($transaction->status === TransactionStatus::COMPLETE) {
+                $waste = $transactionWaste->waste;
+                $currentQty = $waste->stock_in_kg;
+                $quantity = $transactionWaste->qty_in_kg;
+                $movementType = '';
+                $descText = '';
 
-            if ($transaction->type === TransactionType::SELL) {
-                // Transaksi JUAL menjadi COMPLETE: Stok BERKURANG
-                $waste->stock_in_kg -= $quantity;
-                $quantity = -$quantity;
-                $movementType = MovementType::SELLOUT;
-                $descText = 'Penjualan (Nomer Transaksi: ' . $transaction->number . ')';
+                if ($transaction->type === TransactionType::SELL) {
+                    // Transaksi JUAL menjadi COMPLETE: Stok BERKURANG
+                    $waste->stock_in_kg -= $quantity;
+                    $quantity = -$quantity;
+                    $movementType = MovementType::SELLOUT;
+                    $descText = 'Penjualan (Nomer Transaksi: ' . $transaction->number . ')';
+                }
+
+                if ($transaction->type === TransactionType::PURCHASE) {
+                    // Transaksi BELI menjadi COMPLETE: Stok BERTAMBAH
+                    $waste->stock_in_kg += $quantity;
+                    $movementType = MovementType::PURCHASEIN;
+                    $descText = 'Pembelian (Nomer Transaksi: ' . $transaction->number . ')';
+                }
+                $waste->save();
+
+                StockMovement::create([
+                    'waste_id' => $waste->id,
+                    'type' => $movementType,
+                    'before_movement_kg' => $currentQty,
+                    'quantity_change_kg' => $quantity,
+                    'current_stock_after_movement_kg' => $waste->stock_in_kg,
+                    'description' => $descText,
+                    'carbon_footprint_change_kg_co2e' => $quantity * $waste->category->emission_factor,
+                    'transaction_id' => $transaction->id,
+                    'user_id' => Auth::id(),
+                    'created_at' => $transaction->created_at,
+                    'updated_at' => $transaction->updated_at,
+                ]);
             }
-
-            if ($transaction->type === TransactionType::PURCHASE) {
-                // Transaksi BELI menjadi COMPLETE: Stok BERTAMBAH
-                $waste->stock_in_kg += $quantity;
-                $movementType = MovementType::PURCHASEIN;
-                $descText = 'Pembelian (Nomer Transaksi: ' . $transaction->number . ')';
-            }
-
-            $waste->save();
-            StockMovement::create([
-                'waste_id' => $waste->id,
-                'type' => $movementType,
-                'before_movement_kg' => $currentQty,
-                'quantity_change_kg' => $quantity,
-                'current_stock_after_movement_kg' => $waste->stock_in_kg,
-                'description' => $descText,
-                'transaction_id' => $transaction->id,
-                'user_id' => Auth::id(),
-                'created_at' => $transaction->created_at,
-                'updated_at' => $transaction->updated_at,
-            ]);
-        }
+        });
     }
 
     /**

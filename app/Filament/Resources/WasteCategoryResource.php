@@ -16,6 +16,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class WasteCategoryResource extends Resource
 {
@@ -60,7 +61,8 @@ class WasteCategoryResource extends Resource
                     ->label('Faktor Emisi')
                     ->sortable()
                     ->html()
-                    ->formatStateUsing(fn($state) => $state . ' Kg CO<sub>2</sub>/Kg')
+                    ->suffix(new HtmlString(' Kg CO<sub>2</sub>e/Kg'))
+                    ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
             ])
             ->filters([
                 //

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\Decarbonization\CarbonFootPrintOverview;
+
 class CarbonEmissionDashboard extends \Filament\Pages\Dashboard
 {
     protected static string $routePath = 'carbon';
@@ -14,6 +16,8 @@ class CarbonEmissionDashboard extends \Filament\Pages\Dashboard
 
     public function getWidgets(): array
     {
-        return [];
+        return [
+            CarbonFootPrintOverview::class,
+        ];
     }
 }

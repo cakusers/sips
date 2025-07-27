@@ -22,7 +22,7 @@ class Waste extends Model
         return $this->hasOne(WastePrice::class)->latestOfMany();
     }
 
-    public function wasteCategory(): BelongsTo
+    public function category(): BelongsTo
     {
         return $this->belongsTo(WasteCategory::class, 'waste_category_id');
     }
