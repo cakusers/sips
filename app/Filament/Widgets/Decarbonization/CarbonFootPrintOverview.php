@@ -2,13 +2,13 @@
 
 namespace App\Filament\Widgets\Decarbonization;
 
+use Carbon\Carbon;
+use App\Services\NumberService;
 use App\Enums\MovementType;
 use App\Models\StockMovement;
-use Carbon\Carbon;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\HtmlString;
-use NumberFormatter;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class CarbonFootPrintOverview extends BaseWidget
 {
@@ -16,7 +16,7 @@ class CarbonFootPrintOverview extends BaseWidget
     {
         // Waktu
         $currentMonth = Carbon::now()->month;
-        $lastMonth = Carbon::now()->subMonth()->month;
+        $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
 
         // Jejak karbon masuk
         $currentMonthCarbonIn = $this->getCarbonFootprintIn($currentMonth);
@@ -30,16 +30,16 @@ class CarbonFootPrintOverview extends BaseWidget
         $lastMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($lastMonth);
 
         return [
-            $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn),
-            $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut),
-            $this->createStatCard('Rata-rata Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn),
+            $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
+            $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
+            $this->createStatCard('Rata-rata Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
         ];
     }
 
-    protected function createStatCard(string $label, float $currentValue, float $previousValue): Stat
+    protected function createStatCard(string $label, float $currentValue, float $previousValue, NumberService $numberService): Stat
     {
         $percentageChange = $this->calculatePercentageChange($currentValue, $previousValue);
-        $formattedValue = $this->getFormatValue($currentValue);
+        $formattedValue = $this->getFormatValue($currentValue, $numberService);
 
         $stat = Stat::make($label, $formattedValue);
 
@@ -52,9 +52,11 @@ class CarbonFootPrintOverview extends BaseWidget
         }
 
         $isIncrease = $percentageChange > 0;
+        $percentageFormatted = $numberService->decimal(abs($percentageChange), true);
+
         $descriptionText = sprintf(
             '%s%% %s dari bulan lalu',
-            number_format(abs($percentageChange), 2, ',', '.'),
+            $percentageFormatted,
             $isIncrease ? 'kenaikan' : 'penurunan'
         );
 
@@ -85,8 +87,10 @@ class CarbonFootPrintOverview extends BaseWidget
 
     protected function getCarbonFootprintIn(int $month): float
     {
+
         return StockMovement::query()
             ->whereMonth('created_at', $month)
+            ->whereYear('created_at', Carbon::now()->year)
             ->where('quantity_change_kg', '>', '0')
             ->sum('carbon_footprint_change_kg_co2e');
     }
@@ -95,6 +99,7 @@ class CarbonFootPrintOverview extends BaseWidget
     {
         $totalOut = StockMovement::query()
             ->whereMonth('created_at', $month)
+            ->whereYear('created_at', Carbon::now()->year)
             ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->sum('carbon_footprint_change_kg_co2e');
 
@@ -105,15 +110,16 @@ class CarbonFootPrintOverview extends BaseWidget
     {
         return StockMovement::query()
             ->whereMonth('created_at', $month)
+            ->whereYear('created_at', Carbon::now()->year)
             ->where('quantity_change_kg', '>', '0')
             ->avg('carbon_footprint_change_kg_co2e');
     }
 
-    protected function getFormatValue(float $value): HtmlString
+    protected function getFormatValue(float $value, NumberService $numberService): HtmlString
     {
-        $decimal_formatter = new NumberFormatter(app()->getLocale(), NumberFormatter::DECIMAL);
-        $formatedValue = $decimal_formatter->format($value);
-        return new HtmlString($formatedValue . ' Kg CO<sub>2</sub>e/Kg');
+        // <-- DIUBAH: Gunakan service untuk format desimal
+        $formattedValue = $numberService->decimal($value);
+        return new HtmlString($formattedValue . ' Kg CO<sub>2</sub>e/Kg');
     }
 
     // protected function dynamicDecimalFormat(float $number): string

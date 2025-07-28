@@ -1,32 +1,32 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Widgets\Sales;
 
 use Carbon\Carbon;
-use Filament\Forms\Get;
 use Carbon\CarbonPeriod;
 use App\Models\Transaction;
-use Filament\Support\RawJs;
+use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
-use Doctrine\DBAL\Query\QueryBuilder;
-use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Support\RawJs;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class GrossProfitChart extends ApexChartWidget
+class RevenueChart extends ApexChartWidget
 {
-
-    protected static ?string $chartId = 'grossProfitChart';
-    protected int | string | array $columnSpan = 'full';
-
-    public function getHeading(): string
+    protected static ?string $chartId = 'revenueChart';
+    protected function getHeading(): null|string|Htmlable|View
     {
         $period = '';
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Laba Kotor %s ';
+        $heading = 'Grafik Pendapatan %s ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
@@ -53,8 +53,7 @@ class GrossProfitChart extends ApexChartWidget
 
         return $heading;
     }
-
-    protected static ?string $footer = 'Menampilkan estimasi laba kotor (Pendapatan - Pembelian) dari transaksi yang telah selesai';
+    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) dari transaksi yang telah selesai';
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
@@ -131,63 +130,37 @@ class GrossProfitChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data laba kotor Tahunan
-     * @return Collection laba kotor per tahun
+     * Mendapatkan data Pendapatan Tahunan
+     * @return Collection pendapatan per tahun
      */
-    protected function getGrossProfitYearly(): Collection
+    protected function getRevenueYearly(): Collection
     {
         $yearlyRevenue = Transaction::query()
+            ->where('type', '=', TransactionType::SELL)
             ->where('status', '=', TransactionStatus::COMPLETE)
-            ->selectRaw("
-                YEAR(created_at) as year,
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) -
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) as profit
-            ", [TransactionType::SELL, TransactionType::PURCHASE])
+            ->selectRaw("YEAR(created_at) as year, SUM(total_price) as total")
             ->groupBy('year')
-            ->pluck('profit', 'year');
+            ->pluck('total', 'year');
 
         return $yearlyRevenue;
     }
 
     /**
-     * Mendapatkan data laba kotor Bulanan dalam tahun tertentu
+     * Mendapatkan data Pendapatan Bulanan dalam tahun tertentu
      * @param   int $year
-     * @return  Collection laba kotor per bulan
+     * @return  Collection pendapatan per bulan
      */
-    protected function getGrossProfitMonthly(int $year): Collection
+    protected function getRevenueMonthly(int $year): Collection
     {
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
         $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
-        $monthlyGrossProfit = Transaction::query()
+        $monthlyRevenue = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('type', '=', TransactionType::SELL)
             ->where('status', '=', TransactionStatus::COMPLETE)
-            ->selectRaw("
-                DATE_FORMAT(created_at, '%Y-%m') as month_key,
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) -
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) as profit
-            ", [TransactionType::SELL, TransactionType::PURCHASE])
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, SUM(total_price) as total")
             ->groupBy('month_key')
-            ->pluck('profit', 'month_key');
+            ->pluck('total', 'month_key');
 
         $period = CarbonPeriod::create($startDate, '1 month', $endDate);
         $monthTemplate = collect();
@@ -196,7 +169,7 @@ class GrossProfitChart extends ApexChartWidget
             $monthTemplate[$month] = 0;
         }
 
-        $result = $monthTemplate->merge($monthlyGrossProfit);
+        $result = $monthTemplate->merge($monthlyRevenue);
         $result = $result->mapWithKeys(function ($total, $date) {
             $formattedDate = Carbon::parse($date)
                 ->locale('id')
@@ -208,35 +181,22 @@ class GrossProfitChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data laba kotor Mingguan dalam bulan dan tahun tertentu
+     * Mendapatkan data Pendapatan Mingguan dalam bulan dan tahun tertentu
      * @param   int $month
      * @param   int $year
-     * @return  Collection laba kotor per minggu
+     * @return  Collection pendapatan per minggu
      */
-    protected function getGrossProfitWeekly(int $month, int $year): Collection
+    protected function getRevenueWeekly(int $month, int $year): Collection
     {
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth();
-        $weeklyGrossProfit = Transaction::query()
+        $weeklyRevenue = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('type', '=', TransactionType::SELL)
             ->where('status', '=', TransactionStatus::COMPLETE)
-            ->selectRaw("
-                DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date,
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) -
-                SUM(
-                    CASE
-                        WHEN type = ? THEN total_price
-                        ELSE 0
-                    END
-                ) as profit
-            ", [TransactionType::SELL, TransactionType::PURCHASE])
+            ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(total_price) as total")
             ->groupBy('week_start_date')
-            ->pluck('profit', 'week_start_date');
+            ->pluck('total', 'week_start_date');
 
         // Template tanggal
         $period = CarbonPeriod::create($startDate, '1 week', $endDate);
@@ -246,7 +206,7 @@ class GrossProfitChart extends ApexChartWidget
             $dateTemplate[$weekStartDate] = 0;
         }
 
-        $result = $dateTemplate->merge($weeklyGrossProfit);
+        $result = $dateTemplate->merge($weeklyRevenue);
         $result = $result->mapWithKeys(function ($total, $date) {
             $formattedDate = Carbon::parse($date)
                 ->locale('id')
@@ -262,18 +222,18 @@ class GrossProfitChart extends ApexChartWidget
         $data = collect();
         switch ($period) {
             case 'yearly':
-                $data = $this->getGrossProfitYearly();
+                $data = $this->getRevenueYearly();
                 break;
 
             case 'monthly':
                 $year = $year = $this->filterFormData['year'];
-                $data = $this->getGrossProfitMonthly($year);
+                $data = $this->getRevenueMonthly($year);
                 break;
 
             default:
                 $month = $this->filterFormData['month'];
                 $year = $this->filterFormData['year'];
-                $data = $this->getGrossProfitWeekly($month, $year);
+                $data = $this->getRevenueWeekly($month, $year);
                 break;
         }
 
@@ -293,7 +253,7 @@ class GrossProfitChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Laba Kotor',
+                    'name' => 'Pendapatan',
                     'data' => $data->values()->all(),
                 ],
             ],
@@ -315,7 +275,7 @@ class GrossProfitChart extends ApexChartWidget
                     'text' => 'Rupiah (Rp)'
                 ]
             ],
-            'colors' => ['#3b82f6'],
+            'colors' => ['#7e50cc'],
             'stroke' => [
                 'curve' => 'smooth',
             ],

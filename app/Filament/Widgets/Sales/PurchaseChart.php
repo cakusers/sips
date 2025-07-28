@@ -1,32 +1,30 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Widgets\Sales;
 
 use Carbon\Carbon;
+use Filament\Forms\Get;
 use Carbon\CarbonPeriod;
 use App\Models\Transaction;
-use App\Enums\PaymentStatus;
+use Filament\Support\RawJs;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Support\RawJs;
-use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\View\View;
+use Filament\Forms\Components\Select;
+use Illuminate\Contracts\Support\Htmlable;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class RevenueChart extends ApexChartWidget
+class PurchaseChart extends ApexChartWidget
 {
-    protected static ?string $chartId = 'revenueChart';
+    protected static ?string $chartId = 'purchaseChart';
     protected function getHeading(): null|string|Htmlable|View
     {
         $period = '';
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Pendapatan %s ';
+        $heading = 'Grafik Pembelian %s ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
@@ -53,7 +51,7 @@ class RevenueChart extends ApexChartWidget
 
         return $heading;
     }
-    protected static ?string $footer = 'Menampilkan pendapatan (penjualan) dari transaksi yang telah selesai';
+    protected static ?string $footer = 'Menampilkan pembelian dari transaksi yang telah selesai';
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
@@ -130,33 +128,33 @@ class RevenueChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data Pendapatan Tahunan
-     * @return Collection pendapatan per tahun
+     * Mendapatkan data Pembelian Tahunan
+     * @return Collection pembelian per tahun
      */
-    protected function getRevenueYearly(): Collection
+    protected function getPurchaseYearly(): Collection
     {
-        $yearlyRevenue = Transaction::query()
-            ->where('type', '=', TransactionType::SELL)
+        $yearlyPurchase = Transaction::query()
+            ->where('type', '=', TransactionType::PURCHASE)
             ->where('status', '=', TransactionStatus::COMPLETE)
             ->selectRaw("YEAR(created_at) as year, SUM(total_price) as total")
             ->groupBy('year')
             ->pluck('total', 'year');
 
-        return $yearlyRevenue;
+        return $yearlyPurchase;
     }
 
     /**
-     * Mendapatkan data Pendapatan Bulanan dalam tahun tertentu
+     * Mendapatkan data pembelian Bulanan dalam tahun tertentu
      * @param   int $year
-     * @return  Collection pendapatan per bulan
+     * @return  Collection pembelian per bulan
      */
-    protected function getRevenueMonthly(int $year): Collection
+    protected function getPurchaseMonthly(int $year): Collection
     {
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
         $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
-        $monthlyRevenue = Transaction::query()
+        $monthlyPurchase = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('type', '=', TransactionType::SELL)
+            ->where('type', '=', TransactionType::PURCHASE)
             ->where('status', '=', TransactionStatus::COMPLETE)
             ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, SUM(total_price) as total")
             ->groupBy('month_key')
@@ -169,7 +167,7 @@ class RevenueChart extends ApexChartWidget
             $monthTemplate[$month] = 0;
         }
 
-        $result = $monthTemplate->merge($monthlyRevenue);
+        $result = $monthTemplate->merge($monthlyPurchase);
         $result = $result->mapWithKeys(function ($total, $date) {
             $formattedDate = Carbon::parse($date)
                 ->locale('id')
@@ -181,18 +179,18 @@ class RevenueChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data Pendapatan Mingguan dalam bulan dan tahun tertentu
+     * Mendapatkan data pembelian Mingguan dalam bulan dan tahun tertentu
      * @param   int $month
      * @param   int $year
-     * @return  Collection pendapatan per minggu
+     * @return  Collection pembelian per minggu
      */
-    protected function getRevenueWeekly(int $month, int $year): Collection
+    protected function getPurchaseWeekly(int $month, int $year): Collection
     {
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth();
-        $weeklyRevenue = Transaction::query()
+        $weeklyPurchase = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('type', '=', TransactionType::SELL)
+            ->where('type', '=', TransactionType::PURCHASE)
             ->where('status', '=', TransactionStatus::COMPLETE)
             ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(total_price) as total")
             ->groupBy('week_start_date')
@@ -206,7 +204,7 @@ class RevenueChart extends ApexChartWidget
             $dateTemplate[$weekStartDate] = 0;
         }
 
-        $result = $dateTemplate->merge($weeklyRevenue);
+        $result = $dateTemplate->merge($weeklyPurchase);
         $result = $result->mapWithKeys(function ($total, $date) {
             $formattedDate = Carbon::parse($date)
                 ->locale('id')
@@ -222,18 +220,18 @@ class RevenueChart extends ApexChartWidget
         $data = collect();
         switch ($period) {
             case 'yearly':
-                $data = $this->getRevenueYearly();
+                $data = $this->getPurchaseYearly();
                 break;
 
             case 'monthly':
                 $year = $year = $this->filterFormData['year'];
-                $data = $this->getRevenueMonthly($year);
+                $data = $this->getPurchaseMonthly($year);
                 break;
 
             default:
                 $month = $this->filterFormData['month'];
                 $year = $this->filterFormData['year'];
-                $data = $this->getRevenueWeekly($month, $year);
+                $data = $this->getPurchaseWeekly($month, $year);
                 break;
         }
 
@@ -253,7 +251,7 @@ class RevenueChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Pendapatan',
+                    'name' => 'Pembelian',
                     'data' => $data->values()->all(),
                 ],
             ],
@@ -275,7 +273,7 @@ class RevenueChart extends ApexChartWidget
                     'text' => 'Rupiah (Rp)'
                 ]
             ],
-            'colors' => ['#7e50cc'],
+            'colors' => ['#f97316'],
             'stroke' => [
                 'curve' => 'smooth',
             ],

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\FinanceOverview;
-use App\Filament\Widgets\GrossProfitChart;
-use App\Filament\Widgets\PurchaseChart;
-use App\Filament\Widgets\RevenueChart;
+use App\Filament\Widgets\Sales\FinanceOverview;
+use App\Filament\Widgets\Sales\GrossProfitChart;
+use App\Filament\Widgets\Sales\PurchaseChart;
+use App\Filament\Widgets\Sales\RevenueChart;
 
 class SalesDashboard extends \Filament\Pages\Dashboard
 {
