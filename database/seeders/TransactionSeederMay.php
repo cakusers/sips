@@ -103,6 +103,83 @@ class TransactionSeederMay extends Seeder
             'updated_at' => $tanggal
         ]);
 
+        /**
+         * Minggu ke-0
+         */
+        $tanggal = Carbon::create(2025, 5, 1);
+        $sampah = $botol;
+        $tipe = TransactionType::PURCHASE;
+        $harga = $this->getPrice($tipe, $sampah); // 1500
+        $qty = 10;
+
+        $transaksiMei1 = Transaction::create([
+            'type' => $tipe,
+            'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->random()->id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksiMei1->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create(2025, 5, 1);
+        $sampah = $kaleng;
+        $tipe = TransactionType::PURCHASE;
+        $harga = $this->getPrice($tipe, $sampah); // 1500
+        $qty = 5;
+
+        $transaksiMei1 = Transaction::create([
+            'type' => $tipe,
+            'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->random()->id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksiMei1->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create(2025, 5, 2);
+        $sampah = $botol;
+        $tipe = TransactionType::SELL;
+        $harga = $this->getPrice($tipe, $sampah); // 1500
+        $qty = 5;
+
+        $transaksiMei1 = Transaction::create([
+            'type' => $tipe,
+            'status' => TransactionStatus::COMPLETE,
+            'payment_status' => PaymentStatus::PAID,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->random()->id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksiMei1->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
 
         /**
          * Minggu ke-1

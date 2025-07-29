@@ -119,7 +119,7 @@ class CarbonFootPrintOverview extends BaseWidget
     {
         // <-- DIUBAH: Gunakan service untuk format desimal
         $formattedValue = $numberService->decimal($value);
-        return new HtmlString($formattedValue . ' Kg CO<sub>2</sub>e/Kg');
+        return new HtmlString($formattedValue . ' Kg CO<sub>2</sub>e');
     }
 
     // protected function dynamicDecimalFormat(float $number): string

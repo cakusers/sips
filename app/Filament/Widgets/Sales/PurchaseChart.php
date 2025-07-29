@@ -262,6 +262,9 @@ class PurchaseChart extends ApexChartWidget
                         'fontFamily' => 'inherit',
                     ],
                 ],
+                'title' => [
+                    'text' => 'Periode'
+                ]
             ],
             'yaxis' => [
                 'labels' => [
@@ -270,7 +273,7 @@ class PurchaseChart extends ApexChartWidget
                     ],
                 ],
                 'title' => [
-                    'text' => 'Rupiah (Rp)'
+                    'text' => 'Pembelian ( Rp )'
                 ]
             ],
             'colors' => ['#f97316'],

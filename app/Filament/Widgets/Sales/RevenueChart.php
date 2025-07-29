@@ -190,11 +190,12 @@ class RevenueChart extends ApexChartWidget
     {
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth();
+
         $weeklyRevenue = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('type', '=', TransactionType::SELL)
             ->where('status', '=', TransactionStatus::COMPLETE)
-            ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(total_price) as total")
+            ->selectRaw("DATE(created_at - INTERVAL (WEEKDAY(created_at)) DAY) as week_start_date, SUM(total_price) as total")
             ->groupBy('week_start_date')
             ->pluck('total', 'week_start_date');
 
@@ -264,6 +265,9 @@ class RevenueChart extends ApexChartWidget
                         'fontFamily' => 'inherit',
                     ],
                 ],
+                'title' => [
+                    'text' => 'Periode'
+                ]
             ],
             'yaxis' => [
                 'labels' => [
@@ -272,7 +276,7 @@ class RevenueChart extends ApexChartWidget
                     ],
                 ],
                 'title' => [
-                    'text' => 'Rupiah (Rp)'
+                    'text' => 'Pendapatan ( Rp )'
                 ]
             ],
             'colors' => ['#7e50cc'],
