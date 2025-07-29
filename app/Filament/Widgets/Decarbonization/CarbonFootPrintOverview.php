@@ -117,7 +117,6 @@ class CarbonFootPrintOverview extends BaseWidget
 
     protected function getFormatValue(float $value, NumberService $numberService): HtmlString
     {
-        // <-- DIUBAH: Gunakan service untuk format desimal
         $formattedValue = $numberService->decimal($value);
         return new HtmlString($formattedValue . ' Kg CO<sub>2</sub>e');
     }

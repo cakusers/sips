@@ -215,8 +215,8 @@ class GrossProfitChart extends ApexChartWidget
      */
     protected function getGrossProfitWeekly(int $month, int $year): Collection
     {
-        $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth() : Carbon::create($year, $month)->startOfMonth();
-        $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth();
+        $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth()->startOfWeek(Carbon::MONDAY) : Carbon::create($year, $month)->startOfMonth()->startOfWeek(Carbon::MONDAY);
+        $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth()->endOfWeek(Carbon::SUNDAY);
         $weeklyGrossProfit = Transaction::query()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '=', TransactionStatus::COMPLETE)
