@@ -91,7 +91,8 @@ class StockMovementResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal & Waktu')
                     ->dateTime('j F o, H.i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('transaction.number')
                     ->label('Nomer Transaksi')
                     ->toggleable()
@@ -102,10 +103,12 @@ class StockMovementResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('before_movement_kg')
                     ->label('Stok Awal (Kg)')
+                    ->toggleable()
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe Perubahan')
+                    ->toggleable()
                     ->badge()
                     ->color(fn(MovementType $state) => match ($state) {
                         MovementType::PURCHASEIN, MovementType::RETURNEDIN, MovementType::MANUALIN => 'info',
@@ -126,6 +129,7 @@ class StockMovementResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('quantity_change_kg')
                     ->label('Perubahan (Kg)')
+                    ->toggleable()
                     ->alignCenter()
                     ->formatStateUsing(
                         fn(string $state): string =>
@@ -137,12 +141,14 @@ class StockMovementResource extends Resource
                     ),
                 Tables\Columns\TextColumn::make('current_stock_after_movement_kg')
                     ->label('Stok Akhir (Kg)')
+                    ->toggleable()
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
-                // Tables\Columns\TextColumn::make('description')
-                //     ->label('Deskripsi')
-                //     ->words(3)
-                //     ->tooltip(fn(string $state): string => $state),,
+                Tables\Columns\TextColumn::make('carbon_footprint_change_kg_co2e')
+                    ->label('Jejak Karbon')
+                    ->formatStateUsing(fn($state) => abs((float) $state))
+                    ->alignCenter()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Dilakukan Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -150,6 +156,8 @@ class StockMovementResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
+                    ->label('Filter Tipe Pergerakan')
+                    ->multiple()
                     ->options([
                         MovementType::PURCHASEIN->value => 'Pembelian Masuk',
                         MovementType::SELLOUT->value => 'Penjualan Keluar',
@@ -160,8 +168,7 @@ class StockMovementResource extends Resource
                         MovementType::SORTINGIN->value => 'Sortiran Masuk',
                         MovementType::SORTINGOUT->value => 'Sortiran Keluar',
                         MovementType::SORTINGADJUST->value => 'Penyesuaian Sortir',
-                    ])
-                    ->label('Filter Tipe Pergerakan'),
+                    ]),
                 Tables\Filters\SelectFilter::make('waste_id')
                     ->relationship('waste', 'name')
                     ->searchable()

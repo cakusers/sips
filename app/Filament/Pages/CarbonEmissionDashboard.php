@@ -5,6 +5,9 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\Decarbonization\CarbonCompositionChart;
 use App\Filament\Widgets\Decarbonization\CarbonFootPrintOverview;
 use App\Filament\Widgets\Decarbonization\CarbonInChart;
+use App\Filament\Widgets\Decarbonization\CarbonInCompositionChart;
+use App\Filament\Widgets\Decarbonization\CarbonOutChart;
+use App\Filament\Widgets\Decarbonization\CarbonOutCompositionChart;
 
 class CarbonEmissionDashboard extends \Filament\Pages\Dashboard
 {
@@ -21,7 +24,10 @@ class CarbonEmissionDashboard extends \Filament\Pages\Dashboard
         return [
             CarbonFootPrintOverview::class,
             CarbonInChart::class,
+            CarbonOutChart::class,
             CarbonCompositionChart::class,
+            CarbonInCompositionChart::class,
+            CarbonOutCompositionChart::class,
         ];
     }
 }

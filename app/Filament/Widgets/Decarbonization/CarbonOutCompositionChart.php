@@ -2,31 +2,34 @@
 
 namespace App\Filament\Widgets\Decarbonization;
 
+use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonCompositionChart extends ApexChartWidget
+class CarbonOutCompositionChart extends ApexChartWidget
 {
+    protected static ?string $chartId = 'CarbonOutChart';
+    protected static ?string $heading = 'Total Jejak Karbon Keluar';
 
-    protected static ?string $chartId = 'carbonComposition';
-    protected static ?string $heading = 'Jejak Karbon Terbesar Stok Saat Ini';
-
-    protected function getCarbonByCategory(): Collection
+    protected function getCarbonOutAllTime(): Collection
     {
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
+            ->whereIn('type', [
+                MovementType::SELLOUT,
+                MovementType::MANUALOUT
+            ])
             ->select(
                 'waste_categories.name as category_name',
-                DB::raw('SUM(stock_movements.carbon_footprint_change_kg_co2e) as total_carbon')
+                DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
             )
             ->groupBy('category_name')
             ->orderByDesc('total_carbon')
-            ->pluck('total_carbon', 'category_name')
-        ;
+            ->pluck('total_carbon', 'category_name');
     }
 
     /**
@@ -37,7 +40,8 @@ class CarbonCompositionChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $data = $this->getCarbonByCategory();
+
+        $data = $this->getCarbonOutAllTime();
         // dd($data);
         return [
             'chart' => [
@@ -57,7 +61,6 @@ class CarbonCompositionChart extends ApexChartWidget
                         'size' => '35%'
                     ]
                 ]
-
             ]
         ];
     }

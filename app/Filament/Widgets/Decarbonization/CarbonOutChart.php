@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets\Decarbonization;
 
+use App\Enums\MovementType;
 use Carbon\Carbon;
 use Filament\Forms\Get;
 use Carbon\CarbonPeriod;
@@ -13,9 +14,10 @@ use Filament\Forms\Components\Select;
 use Illuminate\Contracts\Support\Htmlable;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonInChart extends ApexChartWidget
+class CarbonOutChart extends ApexChartWidget
 {
-    protected static ?string $chartId = 'CarbonInChart';
+
+    protected static ?string $chartId = 'carbonOutChart';
     protected int | string | array $columnSpan = 'full';
     protected function getHeading(): null|string|Htmlable|View
     {
@@ -23,7 +25,7 @@ class CarbonInChart extends ApexChartWidget
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Karbon Sampah Masuk %s ';
+        $heading = 'Grafik Karbon Sampah Keluar %s ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
@@ -126,14 +128,14 @@ class CarbonInChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data Tahunan dari karbon yang masuk
+     * Mendapatkan data Tahunan dari karbon yang keluar
      * @return Collection pendapatan per tahun
      */
-    protected function getYearlyCarbonIn(): Collection
+    protected function getYearlyCarbonOut(): Collection
     {
         $yearlyCarbon = StockMovement::query()
-            ->whereIn('carbon_footprint_change_kg_co2e', '>', 0.0)
-            ->selectRaw("YEAR(created_at) as year, SUM(carbon_footprint_change_kg_co2e) as carbon")
+            ->where('type', MovementType::SELLOUT)
+            ->selectRaw("YEAR(created_at) as year, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon")
             ->groupBy('year')
             ->pluck('carbon', 'year');
 
@@ -141,19 +143,19 @@ class CarbonInChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data Bulanan dari karbon yang masuk dalam tahun tertentu
+     * Mendapatkan data Bulanan dari karbon yang keluar dalam tahun tertentu
      * @param   int $year
      * @return  Collection pembelian per bulan
      */
-    protected function getMonthlyCarbonIn(int $year): Collection
+    protected function getMonthlyCarbonOut(int $year): Collection
     {
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
         $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
 
         $monthlyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
-            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(carbon_footprint_change_kg_co2e) as carbon')
+            ->whereIn('type', [MovementType::MANUALOUT, MovementType::SELLOUT, MovementType::RETURNEDOUT])
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon')
             ->groupBy('month')
             ->pluck('carbon', 'month');
 
@@ -176,12 +178,12 @@ class CarbonInChart extends ApexChartWidget
     }
 
     /**
-     * Mendapatkan data Mingguan dari karbon yang masuk dalam bulan dan tahun tertentu
+     * Mendapatkan data Mingguan dari karbon yang keluar dalam bulan dan tahun tertentu
      * @param   int $month
      * @param   int $year
      * @return  Collection pendapatan per minggu
      */
-    protected function getWeeklyCarbonIn(int $month, int $year): Collection
+    protected function getWeeklyCarbonOut(int $month, int $year): Collection
     {
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth()->startOfWeek(Carbon::MONDAY) : Carbon::create($year, $month)->startOfMonth()->startOfWeek(Carbon::MONDAY);
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth()->endOfWeek(Carbon::SUNDAY);
@@ -190,8 +192,8 @@ class CarbonInChart extends ApexChartWidget
 
         $weeklyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
-            ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(carbon_footprint_change_kg_co2e) as carbon")
+            ->whereIn('type', [MovementType::MANUALOUT, MovementType::SELLOUT, MovementType::RETURNEDOUT])
+            ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon")
             ->groupBy('week_start_date')
             ->pluck('carbon', 'week_start_date');
 
@@ -224,18 +226,18 @@ class CarbonInChart extends ApexChartWidget
         $data = collect();
         switch ($period) {
             case 'yearly':
-                $data = $this->getYearlyCarbonIn();
+                $data = $this->getYearlyCarbonOut();
                 break;
 
             case 'monthly':
                 $year = $year = $this->filterFormData['year'];
-                $data = $this->getMonthlyCarbonIn($year);
+                $data = $this->getMonthlyCarbonOut($year);
                 break;
 
             default:
                 $month = $this->filterFormData['month'];
                 $year = $this->filterFormData['year'];
-                $data = $this->getWeeklyCarbonIn($month, $year);
+                $data = $this->getWeeklyCarbonOut($month, $year);
                 break;
         }
 
@@ -261,7 +263,7 @@ class CarbonInChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Karbon Masuk',
+                    'name' => 'Karbon Keluar',
                     'data' => $data->values()->toArray(),
                 ],
             ],
@@ -286,13 +288,22 @@ class CarbonInChart extends ApexChartWidget
                     'text' => 'Jejak Karbon'
                 ]
             ],
-            'colors' => ['#9014eb'],
+            'colors' => ['#f97316'],
             'stroke' => [
                 'curve' => 'smooth',
             ],
             'dataLabels' => [
                 'enabled' => false,
             ],
+            // 'plotOptions' => [
+            //     'pie' => [
+            //         'donut' => [
+            //             'labels' => [
+            //                 'show' => true
+            //             ]
+            //         ]
+            //     ]
+            // ]
         ];
     }
 

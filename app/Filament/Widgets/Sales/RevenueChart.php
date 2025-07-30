@@ -279,7 +279,7 @@ class RevenueChart extends ApexChartWidget
                     'text' => 'Pendapatan ( Rp )'
                 ]
             ],
-            'colors' => ['#7e50cc'],
+            'colors' => ['#9014eb'],
             'stroke' => [
                 'curve' => 'smooth',
             ],
