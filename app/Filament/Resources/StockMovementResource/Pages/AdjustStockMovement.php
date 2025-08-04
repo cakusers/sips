@@ -101,7 +101,7 @@ class AdjustStockMovement extends Page implements HasForms
                                 Textarea::make('reason_detail')
                                     ->label('Detail Alasan')
                                     ->placeholder('Jelaskan alasan penyesuaian secara detail...')
-                                    ->hidden(fn(callable $get) => $get('reason_type') !== 'other') // Sembunyikan jika bukan 'Lainnya'
+                                    ->visible(fn(callable $get) => $get('reason_type') === 'other') // Sembunyikan jika bukan 'Lainnya'
                                     ->required(fn(callable $get) => $get('reason_type') === 'other') // Wajib diisi jika 'Lainnya'
                                     ->rows(3)
                                     ->maxLength(500),

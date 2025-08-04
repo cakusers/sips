@@ -6,17 +6,13 @@ use Livewire\Component as Livewire;
 use App\Filament\Resources\WasteResource\Pages;
 use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
 use App\Models\Waste;
-use App\Models\WasteCategory;
-use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\ViewAction;
@@ -24,9 +20,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\HtmlString;
 
 class WasteResource extends Resource
 {
@@ -56,7 +50,7 @@ class WasteResource extends Resource
 
                             Select::make('waste_category_id')
                                 ->label('Kategori Sampah')
-                                ->relationship('wasteCategory', 'name')
+                                ->relationship('category', 'name')
                                 ->preload()
                                 ->native(false)
                                 // ->optionsLimit(50)
@@ -108,32 +102,38 @@ class WasteResource extends Resource
                 TextColumn::make('name')
                     ->label('Nama')
                     ->sortable()
+                    ->toggleable()
                     ->searchable(),
                 ImageColumn::make('img')
                     ->label('Gambar')
+                    ->toggleable()
                     ->visibility('private'),
-                TextColumn::make('wasteCategory.name')
+                TextColumn::make('category.name')
+                    ->toggleable()
                     ->label('Kategori')
                     ->sortable(),
                 TextColumn::make('latestPrice.purchase_per_kg')
                     ->label('Harga Beli')
+                    ->toggleable()
                     ->numeric()
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('latestPrice.selling_per_kg')
                     ->label('Harga Jual')
+                    ->toggleable()
                     ->numeric()
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('stock_in_kg')
                     ->label('Stok Tersedia')
+                    ->toggleable()
                     ->suffix(' Kg')
                     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
                     ->color(fn(string $state) => $state === '0' ? 'danger' : ''),
 
             ])
             ->filters([
-                SelectFilter::make('Kategori')->relationship('wasteCategory', 'name')
+                SelectFilter::make('Kategori')->relationship('category', 'name')
             ])
             ->actions([
                 ViewAction::make(),

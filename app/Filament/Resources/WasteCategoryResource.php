@@ -42,6 +42,7 @@ class WasteCategoryResource extends Resource
                         ->required(),
                     TextInput::make('emission_factor')
                         ->label('Faktor Emisi')
+                        ->suffix(new HtmlString('Kg CO<sub>2</sub>e/Kg'))
                         ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
                         ->dehydrateStateUsing(fn($state) => (float) str_replace(',', '.', $state))
 

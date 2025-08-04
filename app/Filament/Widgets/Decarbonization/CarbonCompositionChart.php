@@ -12,7 +12,7 @@ class CarbonCompositionChart extends ApexChartWidget
 {
 
     protected static ?string $chartId = 'carbonComposition';
-    protected static ?string $heading = 'Jejak Karbon Terbesar Stok Saat Ini';
+    protected static ?string $heading = 'Jejak Karbon Terbesar Pada Stok Saat Ini';
 
     protected function getCarbonByCategory(): Collection
     {

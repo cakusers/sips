@@ -490,17 +490,17 @@ class TransactionResource extends Resource
                         Notification::make()->title('Transaksi ditandai Selesai')->success()->send();
                     }),
 
-                Tables\Actions\Action::make('deliver')
-                    ->button()
-                    ->label('Dikirim')
-                    ->color('info')
-                    ->icon('heroicon-s-truck')
-                    ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
-                    ->action(function (Transaction $record) {
-                        $record->status = TransactionStatus::DELIVERED;
-                        $record->save();
-                        Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
-                    }),
+                // Tables\Actions\Action::make('deliver')
+                //     ->button()
+                //     ->label('Dikirim')
+                //     ->color('info')
+                //     ->icon('heroicon-s-truck')
+                //     ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
+                //     ->action(function (Transaction $record) {
+                //         $record->status = TransactionStatus::DELIVERED;
+                //         $record->save();
+                //         Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
+                //     }),
 
                 Tables\Actions\Action::make('cancel')
                     ->button()

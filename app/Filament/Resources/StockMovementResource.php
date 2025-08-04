@@ -15,6 +15,7 @@ use Filament\Actions;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\StockMovementResource\Pages;
 use App\Filament\Resources\StockMovementResource\Pages\AdjustStockMovement;
+use Illuminate\Support\HtmlString;
 
 class StockMovementResource extends Resource
 {
@@ -145,8 +146,8 @@ class StockMovementResource extends Resource
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
                 Tables\Columns\TextColumn::make('carbon_footprint_change_kg_co2e')
-                    ->label('Jejak Karbon')
-                    ->formatStateUsing(fn($state) => abs((float) $state))
+                    ->label(new HtmlString('Jejak Karbon (Kg CO<sub>2</sub>e)'))
+                    ->formatStateUsing(fn($state) => str_replace('.', ',', abs((float) $state)))
                     ->alignCenter()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('user.name')

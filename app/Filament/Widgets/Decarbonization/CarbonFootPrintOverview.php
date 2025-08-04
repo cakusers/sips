@@ -32,7 +32,7 @@ class CarbonFootPrintOverview extends BaseWidget
         return [
             $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
             $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
-            $this->createStatCard('Rata-rata Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
+            $this->createStatCard('Rata-Rata Karbon Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
         ];
     }
 

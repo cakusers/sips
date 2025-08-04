@@ -65,17 +65,17 @@ class EditTransaction extends EditRecord
                     return redirect(static::getUrl(['record' => $record]));
                 }),
 
-            Actions\Action::make('deliver')
-                ->button()
-                ->label('Kirim')
-                ->color('info')
-                ->icon('heroicon-s-truck')
-                ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
-                ->action(function (Transaction $record) {
-                    $record->status = TransactionStatus::DELIVERED;
-                    $record->save();
-                    Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
-                }),
+            // Actions\Action::make('deliver')
+            //     ->button()
+            //     ->label('Kirim')
+            //     ->color('info')
+            //     ->icon('heroicon-s-truck')
+            //     ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW)
+            //     ->action(function (Transaction $record) {
+            //         $record->status = TransactionStatus::DELIVERED;
+            //         $record->save();
+            //         Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
+            //     }),
 
             Actions\Action::make('cancel')
                 ->button()

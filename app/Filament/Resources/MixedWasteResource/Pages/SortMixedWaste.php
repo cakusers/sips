@@ -3,18 +3,18 @@
 namespace App\Filament\Resources\MixedWasteResource\Pages;
 
 use Closure;
-use Exception;
 use App\Models\Waste;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Enums\MovementType;
 use Filament\Actions\Action;
 use App\Models\StockMovement;
-use App\Enums\TransactionType;
 use App\Models\TransactionWaste;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Actions\Action as ComponentAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Contracts\HasForms;
@@ -72,7 +72,7 @@ class SortMixedWaste extends Page implements HasForms
                             ->label('Pelanggan')
                             ->disabled(),
                         TextInput::make('qty_in_kg')
-                            ->label('Berat')
+                            ->label('Berat Awal')
                             ->suffix('Kg')
                             ->disabled(),
                         DateTimePicker::make('created_at')
@@ -90,6 +90,32 @@ class SortMixedWaste extends Page implements HasForms
                             ->minItems(1)
                             ->defaultItems(1)
                             ->required()
+                            ->live()
+                            ->rules([
+                                fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    $total = 0;
+                                    $items = $value;
+                                    $maxQty = $get('qty_in_kg');
+                                    $sortedQty = 0;
+
+                                    if (is_array($items)) {
+                                        foreach ($items as $item) {
+                                            $sortedQty = (float) str_replace(',', '.', $item['qty_in_kg']) ?? '0';
+                                            $total += $sortedQty;
+                                        }
+                                    }
+
+                                    if ($maxQty < $sortedQty) {
+                                        Notification::make()
+                                            ->title('Gagal Menyimpan Data')
+                                            ->body('Berat sampah pilahan melebihi sampah campuran awal')
+                                            ->icon('heroicon-o-x-circle')
+                                            ->danger()
+                                            ->send();
+                                        $fail("Berat sampah pilahan melebihi sampah campuran");
+                                    }
+                                }
+                            ])
                             ->schema([
                                 Select::make('waste_id')
                                     ->label('Jenis Sampah')
@@ -105,23 +131,55 @@ class SortMixedWaste extends Page implements HasForms
                                 TextInput::make('qty_in_kg')
                                     ->label('Berat')
                                     ->suffix('Kg')
+                                    ->live()
                                     ->required()
                                     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
                                     ->dehydrateStateUsing(fn($state) => (float) str_replace(',', '.', $state))
                                     ->rules([
+                                        // Berat harus lebih dari 0
                                         fn() =>
                                         function (string $attribute, $value, Closure $fail) {
                                             $qty = (float) str_replace(',', '.', $value);
                                             if ($qty <= 0.0) {
-                                                Notification::make()->title('Data tidak berhasil disimpan')->danger()->send();
+                                                Notification::make()->title('Gagal Menyimpan Data')
+                                                    ->body("Berat sampah harus lebih dari 0")
+                                                    ->danger()
+                                                    ->send();
                                                 $fail("Berat harus lebih dari 0");
                                             }
                                         },
                                     ]),
                             ])
-                    ])
+                    ]),
             ])
             ->statePath('data');
+    }
+
+    private static function updateTotalQty(Get $get, Set $set): void
+    {
+        $total = 0;
+        $items = $get('sorted_wastes');
+        $maxQty = $get('qty_in_kg');
+        $sortedQty = 0;
+
+        if (is_array($items)) {
+            foreach ($items as $item) {
+                $sortedQty = (float) str_replace(',', '.', $item['qty_in_kg']) ?? '0';
+                $total += $sortedQty;
+            }
+        }
+
+        if ($maxQty < $sortedQty) {
+            Notification::make()
+                ->title('Gagal Menyimpan Data')
+                ->body('Berat sampah pilahan melebihi sampah campuran awal')
+                ->icon('heroicon-o-x-circle')
+                ->error()
+                ->send();
+            return;
+        }
+
+        $set('sorted_qty', $total);
     }
 
     protected function getFormActions()
@@ -184,6 +242,7 @@ class SortMixedWaste extends Page implements HasForms
                     'unit_price'     => 0,
                     'sub_total_price' => 0,
                     'is_sorted'      => false,
+                    'transaction_id' => $transactionWaste->transaction->id,
                     'sorted_from_id' => $transactionWaste->id,
                 ]);
             }
