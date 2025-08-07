@@ -8,23 +8,25 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Enums\MovementType;
+use App\Enums\TransactionStatus;
 use Filament\Actions\Action;
 use App\Models\StockMovement;
 use App\Models\TransactionWaste;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\Actions\Action as ComponentAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Repeater;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\MixedWasteResource;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Forms\Components\Actions\Action as ComponentAction;
 
 class SortMixedWaste extends Page implements HasForms
 {
@@ -37,6 +39,8 @@ class SortMixedWaste extends Page implements HasForms
     public function mount(int | string $record): void
     {
         $this->record = $this->resolveRecord($record);
+
+        // Cek apakah transaksi dikembalikan atau dibatalkan
 
         // Jika sudah dipilah tampilkan sampahnya
         if ($this->record->is_sorted) {
@@ -55,6 +59,7 @@ class SortMixedWaste extends Page implements HasForms
     public function form(Form $form): Form
     {
         return $form
+            ->disabled(fn() => $this->record->transaction->status === TransactionStatus::CANCELED || $this->record->transaction->status === TransactionStatus::RETURNED)
             ->schema([
                 Section::make()
                     ->columns([
@@ -62,8 +67,7 @@ class SortMixedWaste extends Page implements HasForms
                     ])
                     ->schema([
                         TextInput::make('transaction.number')
-                            ->label('Nomer Transaksi')
-                            ->disabled(),
+                            ->label('Nomer Transaksi'),
                         TextInput::make('is_sorted')
                             ->label('Status Pemilahan')
                             ->formatStateUsing(fn($state) => $state === 0 ? 'Belum dipilah' : 'Sudah Dipilah')
@@ -118,7 +122,7 @@ class SortMixedWaste extends Page implements HasForms
                             ])
                             ->schema([
                                 Select::make('waste_id')
-                                    ->label('Jenis Sampah')
+                                    ->label('Sampah')
                                     ->required()
                                     ->distinct()
                                     ->validationMessages([

@@ -54,7 +54,7 @@ class WasteResource extends Resource
                                 ->preload()
                                 ->native(false)
                                 // ->optionsLimit(50)
-                                ->searchable()
+                                ->searchpable()
                                 ->required()
                                 ->createOptionForm([
                                     TextInput::make('name')

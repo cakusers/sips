@@ -19,6 +19,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\Alignment;
@@ -27,9 +28,11 @@ use Filament\Tables\Filters\Indicator;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
@@ -249,7 +252,79 @@ class TransactionResource extends Resource
                                         $unitPrice = (int) $get('unit_price');
                                         $set('sub_total_price', $qty * $unitPrice);
                                     }
-                                ),
+                                )
+                                ->createOptionForm([
+                                    Grid::make()
+                                        ->columns(2)
+                                        ->schema([
+                                            Section::make()->schema([
+                                                TextInput::make('name')
+                                                    ->label('Nama')
+                                                    ->required(),
+
+                                                Select::make('waste_category_id')
+                                                    ->label('Kategori Sampah')
+                                                    ->relationship('category', 'name')
+                                                    ->preload()
+                                                    ->native(false)
+                                                    // ->optionsLimit(50)
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->createOptionForm([
+                                                        TextInput::make('name')
+                                                            ->label('Kategori')
+                                                            ->required()
+                                                    ]),
+                                            ])->columnSpan(1),
+
+                                            Section::make()->schema([
+                                                TextInput::make('purchase_per_kg')
+                                                    ->prefix('Rp')
+                                                    ->label('Harga Beli per Kg')
+                                                    ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state))
+                                                    ->required(),
+
+                                                TextInput::make('selling_per_kg')
+                                                    ->prefix('Rp')
+                                                    ->label('Harga Jual per Kg')
+                                                    ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state))
+                                                    ->required(),
+                                            ])->columnSpan(1),
+
+                                            Section::make()->schema([
+                                                TextInput::make('stock_in_kg')
+                                                    ->label('Stok Tersedia')
+                                                    ->readOnly()
+                                                    ->default(0)
+                                                    ->suffix('Kg')
+                                                    ->dehydrateStateUsing(fn($state) => str_replace(',', '.', $state)),
+
+                                            ])->columnSpan(1),
+                                            Section::make()->schema([
+                                                FileUpload::make('img')
+                                                    ->label('Gambar Sampah')
+                                                    ->image()
+                                                    ->directory('sampah')
+                                                    ->visibility('private'),
+                                            ])->columnSpan(1)
+                                        ])
+                                ])
+                                ->createOptionUsing(function (array $data): int {
+                                    $waste = Waste::create([
+                                        'name' => $data['name'],
+                                        'img' => $data['img'],
+                                        'waste_category_id' => $data['waste_category_id'],
+                                        // 'min_stock_in_kg' => $data['min_stock_in_kg']
+                                    ]);
+
+                                    WastePrice::create([
+                                        'waste_id' => $waste->id,
+                                        'purchase_per_kg' => $data['purchase_per_kg'],
+                                        'selling_per_kg' => $data['selling_per_kg'],
+                                    ]);
+
+                                    return $waste->id;
+                                }),
 
                             TextInput::make('qty_in_kg')
                                 ->label('Berat')

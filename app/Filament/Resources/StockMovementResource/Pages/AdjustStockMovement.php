@@ -123,7 +123,7 @@ class AdjustStockMovement extends Page implements HasForms
             if (!$waste) {
                 throw ValidationException::withMessages(['waste_id' => 'Jenis sampah tidak ditemukan.']);
             }
-            $currentQty = $waste->qty_in_kg;
+            $currentQty = $waste->stock_in_kg;
 
             $quantity = $this->floatFormat($data['quantity']);
             if ($quantity <= 0) {
@@ -145,6 +145,7 @@ class AdjustStockMovement extends Page implements HasForms
 
             $waste->save();
 
+
             // Catat pergerakan di stock_movements
             StockMovement::create([
                 'waste_id' => $data['waste_id'],
@@ -154,7 +155,7 @@ class AdjustStockMovement extends Page implements HasForms
                 'current_stock_after_movement_kg' => $waste->stock_in_kg,
                 'description' => $data['reason_type'] === 'other' ? $data['reason_detail'] : $data['reason_type'],
                 'transaction_id' => null,
-                'user_id' => Auth::user()->id,
+                'user_id' => Auth::user()->id ?? null,
             ]);
 
             DB::commit();

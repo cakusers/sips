@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use App\Models\MixedWaste;
 use Filament\Tables\Table;
 use App\Enums\TransactionType;
+use App\Enums\TransactionStatus;
 use App\Models\TransactionWaste;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
@@ -75,6 +76,7 @@ class MixedWasteResource extends Resource
                     ->limit(15),
                 TextColumn::make('is_sorted')
                     ->label('Status Pemilahan')
+                    ->alignCenter()
                     ->badge()
                     ->color(fn($state) => $state ? 'info' : 'amber')
                     ->formatStateUsing(fn($state) => $state ? 'Sudah Dipilah' : 'Belum Dipilah'),
@@ -82,6 +84,29 @@ class MixedWasteResource extends Resource
                     ->label('Berat (Kg)')
                     ->alignCenter()
                     ->sortable(),
+                TextColumn::make('transaction.status')
+                    ->label('Status Transaksi')
+                    ->badge()
+                    ->alignment(Alignment::Center)
+                    ->toggleable()
+                    ->color(
+                        fn($state): string => match ($state) {
+                            TransactionStatus::NEW => 'info',
+                            TransactionStatus::COMPLETE => 'success',
+                            TransactionStatus::DELIVERED => 'darkBlue',
+                            TransactionStatus::CANCELED => 'danger',
+                            TransactionStatus::RETURNED => 'purple',
+                        }
+                    )
+                    ->formatStateUsing(
+                        fn($state): string => match ($state) {
+                            TransactionStatus::NEW => 'Baru',
+                            TransactionStatus::COMPLETE => 'Selesai',
+                            TransactionStatus::DELIVERED => 'Dikirimkan',
+                            TransactionStatus::CANCELED => 'Dibatalkan',
+                            TransactionStatus::RETURNED => 'Dikembalikan',
+                        }
+                    )
             ])
             ->filters([
                 TernaryFilter::make('is_sorted')

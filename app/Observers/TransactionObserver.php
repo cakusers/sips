@@ -110,14 +110,15 @@ class TransactionObserver
             foreach ($transaction->transactionWastes()->get() as $item) {
                 $waste = $item->waste;
                 $currentQty = $waste->stock_in_kg;
-                $quantity = $item->qty_in_kg;
                 $movementType = '';
+                $quantity = $item->qty_in_kg;
                 $descText = '';
 
                 if ($triggerType === 'complete') {
                     if ($transaction->type === TransactionType::SELL) {
                         // Transaksi JUAL menjadi COMPLETE: Stok BERKURANG
                         $waste->stock_in_kg -= $quantity;
+                        $quantity = -$quantity;
                         $movementType = MovementType::SELLOUT;
                         $descText = 'Penjualan (Nomer Transaksi: ' . $transaction->number . ')';
                     } elseif ($transaction->type === TransactionType::PURCHASE) {
@@ -138,6 +139,7 @@ class TransactionObserver
                         // Transaksi BELI di-RETURNED: Stok BERKURANG kembali
                         // Ini membalik efek dari pembelian yang sudah selesai
                         $waste->stock_in_kg -= $quantity;
+                        $quantity = -$quantity;
                         $movementType = MovementType::RETURNEDOUT;
                         $descText = 'Pengembalian dari pembelian (Nomer Transaksi: ' . $transaction->number . ')';
                     }

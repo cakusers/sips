@@ -106,9 +106,11 @@ class StockMovementResource extends Resource
                     ->label('Stok Awal (Kg)')
                     ->toggleable()
                     ->alignCenter()
+                    ->abbr('Stok awal sebelum berubah.', asTooltip: true)
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe Perubahan')
+                    ->abbr('Jenis kegiatan yang menyebabkan perubahan pada jumlah stok.', asTooltip: true)
                     ->toggleable()
                     ->badge()
                     ->color(fn(MovementType $state) => match ($state) {
@@ -117,7 +119,7 @@ class StockMovementResource extends Resource
                         MovementType::SORTINGIN, MovementType::SORTINGADJUST => 'purple',
                         default => 'secondary',
                     })
-                    ->formatStateUsing(fn(MovementType $state) => match ($state) {
+                    ->formatStateUsing(fn(MovementType $state): ?string => match ($state) {
                         MovementType::PURCHASEIN => 'Pembelian Masuk',
                         MovementType::SELLOUT => 'Penjualan Keluar',
                         MovementType::RETURNEDIN => 'Pengembalian Masuk',
@@ -127,9 +129,21 @@ class StockMovementResource extends Resource
                         MovementType::SORTINGIN => 'Sortiran Masuk',
                         MovementType::SORTINGOUT => 'Sortiran Keluar',
                         MovementType::SORTINGADJUST => 'Penyesuaian Sortir',
+                    })
+                    ->tooltip(fn(MovementType $state): ?string => match ($state) {
+                        MovementType::PURCHASEIN => 'Penambahan stok dari pembelian sampah.',
+                        MovementType::SELLOUT => 'Pengurangan stok dari penjualan sampah.',
+                        MovementType::RETURNEDIN => 'Penambahan stok dari penjualan sampah yang terlanjur diselesaikan.',
+                        MovementType::RETURNEDOUT => 'Pengurangan stok dari pembelian sampah yang terlanjur diselesaikan.',
+                        MovementType::MANUALIN => 'Penambahan stok secara manual.',
+                        MovementType::MANUALOUT => 'Pengurangan stok secara manual.',
+                        MovementType::SORTINGIN => 'Penambahan stok dari hasil pemilahan.',
+                        MovementType::SORTINGOUT => 'Pengurangan Stok bahan baku yang digunakan untuk pemilahan.',
+                        MovementType::SORTINGADJUST => 'Koreksi jumlah stok pemilahan, bisa menambah atau mengurangi stok',
                     }),
                 Tables\Columns\TextColumn::make('quantity_change_kg')
-                    ->label('Perubahan (Kg)')
+                    ->label('Stok Berubah (Kg)')
+                    ->abbr('Menunjukkan perubahan jumlah stok: Hijau (+) berarti bertambah dan Merah (-) berarti berkurang.', asTooltip: true)
                     ->toggleable()
                     ->alignCenter()
                     ->formatStateUsing(
@@ -142,6 +156,7 @@ class StockMovementResource extends Resource
                     ),
                 Tables\Columns\TextColumn::make('current_stock_after_movement_kg')
                     ->label('Stok Akhir (Kg)')
+                    ->abbr('Stok setelah berubah, menunjukkan stok saat ini', asTooltip: true)
                     ->toggleable()
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
