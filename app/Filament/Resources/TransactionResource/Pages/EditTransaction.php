@@ -6,13 +6,10 @@ use Filament\Actions;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Enums\PaymentStatus;
-use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use App\Filament\Resources\TransactionResource;
-use Filament\Forms\Get;
 
 class EditTransaction extends EditRecord
 {

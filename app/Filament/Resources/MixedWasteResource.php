@@ -58,8 +58,9 @@ class MixedWasteResource extends Resource
     {
         return $table
             ->modifyQueryUsing(fn(Builder $query) => $query->whereHas('waste', function ($query) {
-                $query->where('name', 'like', '%' . 'campuran' . '%')->orderByDesc('created_at');
+                $query->where('name', 'like', '%' . 'campuran' . '%');
             }))
+            ->defaultSort('created_at', 'desc')
             ->recordUrl(fn(Model $record): string => self::getUrl('sort', ['record' => $record]))
             ->columns([
                 TextColumn::make('created_at')

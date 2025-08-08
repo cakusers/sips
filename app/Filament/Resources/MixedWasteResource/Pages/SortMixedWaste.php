@@ -4,12 +4,12 @@ namespace App\Filament\Resources\MixedWasteResource\Pages;
 
 use Closure;
 use App\Models\Waste;
+use Filament\Actions;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Enums\MovementType;
 use App\Enums\TransactionStatus;
-use Filament\Actions\Action;
 use App\Models\StockMovement;
 use App\Models\TransactionWaste;
 use Filament\Resources\Pages\Page;
@@ -19,14 +19,12 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Repeater;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\MixedWasteResource;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
-use Filament\Forms\Components\Actions\Action as ComponentAction;
 
 class SortMixedWaste extends Page implements HasForms
 {
@@ -56,10 +54,30 @@ class SortMixedWaste extends Page implements HasForms
 
     public ?array $data = [];
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\Action::make('status_display')
+                ->label(function () {
+                    $status = match ($this->record->transaction->status) {
+                        TransactionStatus::CANCELED => 'dibatalkan',
+                        TransactionStatus::RETURNED => 'dikembalikan'
+                    };
+
+                    return sprintf("Sampah dari transaksi yang %s tidak dapat dipilah", $status);
+                })
+                ->extraAttributes([
+                    'style' => 'opacity:100%;', // Tambahkan kelas kustom di sini
+                ])
+                ->visible(in_array($this->record->transaction->status, [TransactionStatus::CANCELED, TransactionStatus::RETURNED]))
+                ->color('danger'),
+        ];
+    }
+
     public function form(Form $form): Form
     {
         return $form
-            ->disabled(fn() => $this->record->transaction->status === TransactionStatus::CANCELED || $this->record->transaction->status === TransactionStatus::RETURNED)
+            ->disabled(fn() => in_array($this->record->transaction->status, [TransactionStatus::CANCELED, TransactionStatus::RETURNED]))
             ->schema([
                 Section::make()
                     ->columns([
@@ -67,7 +85,8 @@ class SortMixedWaste extends Page implements HasForms
                     ])
                     ->schema([
                         TextInput::make('transaction.number')
-                            ->label('Nomer Transaksi'),
+                            ->label('Nomer Transaksi')
+                            ->disabled(),
                         TextInput::make('is_sorted')
                             ->label('Status Pemilahan')
                             ->formatStateUsing(fn($state) => $state === 0 ? 'Belum dipilah' : 'Sudah Dipilah')
@@ -186,12 +205,33 @@ class SortMixedWaste extends Page implements HasForms
         $set('sorted_qty', $total);
     }
 
+    protected function getSubmitAction()
+    {
+        return Actions\Action::make('save')
+            ->label('Simpan')
+            ->hidden()
+            ->submit('save');
+    }
+
     protected function getFormActions()
     {
+        if (in_array($this->record->transaction->status, [TransactionStatus::CANCELED, TransactionStatus::RETURNED])) {
+            return [
+                Actions\Action::make('cancel')
+                    ->label('Kembali')
+                    ->outlined()
+                    ->url($this->getResource()::getUrl('index')),
+            ];
+        }
+
         return [
-            Action::make('save')
-                ->label('Simpan Hasil Sortir')
+            Actions\Action::make('save')
+                ->label('Simpan')
                 ->submit('save'),
+            Actions\Action::make('cancel')
+                ->label('Batal')
+                ->outlined()
+                ->url($this->getResource()::getUrl('index')),
         ];
     }
 
