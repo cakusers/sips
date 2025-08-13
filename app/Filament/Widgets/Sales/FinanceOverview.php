@@ -19,8 +19,8 @@ class FinanceOverview extends BaseWidget
      */
     protected function getStats(): array
     {
-        // $fakeNow = Carbon::create(2025, 6, 30);
-        // Carbon::setTestNow($fakeNow);
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
 
         try {
             // Periode waktu untuk bulan ini dan bulan lalu
@@ -49,7 +49,7 @@ class FinanceOverview extends BaseWidget
         } finally {
             // --- PENTING: Selalu reset waktu setelah selesai ---
             // Ini akan mengembalikan Carbon::now() ke waktu sebenarnya.
-            // Carbon::setTestNow();
+            Carbon::setTestNow();
         }
     }
 

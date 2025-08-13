@@ -96,35 +96,41 @@ class PurchaseChart extends ApexChartWidget
      */
     protected function getFormSchema(): array
     {
-        return [
-            Select::make('period')
-                ->label('Periode')
-                ->options([
-                    'weekly' => 'Mingguan',
-                    'monthly' => 'Bulanan',
-                    'yearly' => 'Tahunan'
-                ])
-                ->default('weekly')
-                ->live(),
-            /**
-             * Tampilkan ketika period mingguan
-             */
-            Select::make('month')
-                ->label('Bulan')
-                ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
-                ->default(Carbon::now()->month)
-                ->visible(fn(Get $get) => $get('period') === 'weekly')
-                ->live(),
-            /**
-             * Tampilkan ketika period mingguan dan bulanan
-             */
-            Select::make('year')
-                ->label('Tahun')
-                ->options($this->getAvailableYear())
-                ->default(Carbon::now()->year)
-                ->hidden(fn(Get $get) => $get('period') === 'yearly')
-                ->live(),
-        ];
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            return [
+                Select::make('period')
+                    ->label('Periode')
+                    ->options([
+                        'weekly' => 'Mingguan',
+                        'monthly' => 'Bulanan',
+                        'yearly' => 'Tahunan'
+                    ])
+                    ->default('weekly')
+                    ->live(),
+                /**
+                 * Tampilkan ketika period mingguan
+                 */
+                Select::make('month')
+                    ->label('Bulan')
+                    ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                    ->default(Carbon::now()->month)
+                    ->visible(fn(Get $get) => $get('period') === 'weekly')
+                    ->live(),
+                /**
+                 * Tampilkan ketika period mingguan dan bulanan
+                 */
+                Select::make('year')
+                    ->label('Tahun')
+                    ->options($this->getAvailableYear())
+                    ->default(Carbon::now()->year)
+                    ->hidden(fn(Get $get) => $get('period') === 'yearly')
+                    ->live(),
+            ];
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     /**
@@ -240,50 +246,56 @@ class PurchaseChart extends ApexChartWidget
 
     protected function getOptions(): array
     {
-        $period = $this->filterFormData['period'];
-        $data = $this->getChartData($period);
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            $period = $this->filterFormData['period'];
+            $data = $this->getChartData($period);
 
-        return [
-            'chart' => [
-                'type' => 'area',
-                'height' => 300,
-                'toolbar' => ['show' => false]
-            ],
-            'series' => [
-                [
-                    'name' => 'Pembelian',
-                    'data' => $data->values()->all(),
+            return [
+                'chart' => [
+                    'type' => 'area',
+                    'height' => 300,
+                    'toolbar' => ['show' => false]
                 ],
-            ],
-            'xaxis' => [
-                'categories' => $data->keys()->all(),
-                'labels' => [
-                    'style' => [
-                        'fontFamily' => 'inherit',
+                'series' => [
+                    [
+                        'name' => 'Pembelian',
+                        'data' => $data->values()->all(),
                     ],
                 ],
-                'title' => [
-                    'text' => 'Periode'
-                ]
-            ],
-            'yaxis' => [
-                'labels' => [
-                    'style' => [
-                        'fontFamily' => 'inherit',
+                'xaxis' => [
+                    'categories' => $data->keys()->all(),
+                    'labels' => [
+                        'style' => [
+                            'fontFamily' => 'inherit',
+                        ],
                     ],
+                    'title' => [
+                        'text' => 'Periode'
+                    ]
                 ],
-                'title' => [
-                    'text' => 'Pembelian ( Rp )'
-                ]
-            ],
-            'colors' => ['#f97316'],
-            'stroke' => [
-                'curve' => 'smooth',
-            ],
-            'dataLabels' => [
-                'enabled' => false,
-            ],
-        ];
+                'yaxis' => [
+                    'labels' => [
+                        'style' => [
+                            'fontFamily' => 'inherit',
+                        ],
+                    ],
+                    'title' => [
+                        'text' => 'Pembelian ( Rp )'
+                    ]
+                ],
+                'colors' => ['#f97316'],
+                'stroke' => [
+                    'curve' => 'smooth',
+                ],
+                'dataLabels' => [
+                    'enabled' => false,
+                ],
+            ];
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     protected function extraJsOptions(): ?RawJs

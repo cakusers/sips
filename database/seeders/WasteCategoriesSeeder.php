@@ -15,7 +15,7 @@ class WasteCategoriesSeeder extends Seeder
     {
         $categories = [
             ['name' => 'Botol Plastik', 'emission_factor' => 0.28],
-            // ['name' => 'Plastik', 'emission_factor' => 5.51],
+            ['name' => 'Plastik', 'emission_factor' => 5.51],
             ['name' => 'Kaca', 'emission_factor' => 1.46],
             ['name' => 'Kertas', 'emission_factor' => 0.609],
             ['name' => 'Kardus', 'emission_factor' => 0.46],

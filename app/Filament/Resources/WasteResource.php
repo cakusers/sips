@@ -54,7 +54,7 @@ class WasteResource extends Resource
                                 ->preload()
                                 ->native(false)
                                 // ->optionsLimit(50)
-                                ->searchpable()
+                                ->searchable()
                                 ->required()
                                 ->createOptionForm([
                                     TextInput::make('name')
@@ -81,16 +81,16 @@ class WasteResource extends Resource
                                 ->readOnly()
                                 ->default(0)
                                 ->suffix('Kg')
-                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state)),
-
-                        ])->columnSpan(1),
+                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                        ])->columnSpan(1)
+                            ->hidden(fn($operation) => $operation === 'create'),
                         Section::make()->schema([
                             FileUpload::make('img')
                                 ->label('Gambar Sampah')
                                 ->image()
                                 ->directory('sampah')
                                 ->visibility('private'),
-                        ])->columnSpan(1)
+                        ])->columnSpan(fn($operation) => $operation === 'create' ? 2 : 1)
                     ])
             ]);
     }

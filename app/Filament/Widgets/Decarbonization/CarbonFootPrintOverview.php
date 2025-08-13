@@ -14,26 +14,32 @@ class CarbonFootPrintOverview extends BaseWidget
 {
     protected function getStats(): array
     {
-        // Waktu
-        $currentMonth = Carbon::now()->month;
-        $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            // Waktu
+            $currentMonth = Carbon::now()->month;
+            $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
 
-        // Jejak karbon masuk
-        $currentMonthCarbonIn = $this->getCarbonFootprintIn($currentMonth);
-        $lastMonthCarbonIn = $this->getCarbonFootprintIn($lastMonth);
+            // Jejak karbon masuk
+            $currentMonthCarbonIn = $this->getCarbonFootprintIn($currentMonth);
+            $lastMonthCarbonIn = $this->getCarbonFootprintIn($lastMonth);
 
-        // Jejak karbon keluar
-        $currentMonthCarbonOut = $this->getCarbonFootprintOut($currentMonth);
-        $lastMonthCarbonOut = $this->getCarbonFootprintOut($lastMonth);
+            // Jejak karbon keluar
+            $currentMonthCarbonOut = $this->getCarbonFootprintOut($currentMonth);
+            $lastMonthCarbonOut = $this->getCarbonFootprintOut($lastMonth);
 
-        $currentMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($currentMonth);
-        $lastMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($lastMonth);
+            $currentMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($currentMonth);
+            $lastMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($lastMonth);
 
-        return [
-            $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
-            $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
-            $this->createStatCard('Rata-Rata Karbon Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
-        ];
+            return [
+                $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
+                $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
+                $this->createStatCard('Rata-Rata Karbon Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
+            ];
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     protected function createStatCard(string $label, float $currentValue, float $previousValue, NumberService $numberService): Stat
@@ -108,11 +114,13 @@ class CarbonFootPrintOverview extends BaseWidget
 
     protected function getAvgCarbonFootprintIn(int $month): float
     {
-        return StockMovement::query()
+        $avgCarbonFootprintIn =  StockMovement::query()
             ->whereMonth('created_at', $month)
             ->whereYear('created_at', Carbon::now()->year)
             ->where('quantity_change_kg', '>', '0')
             ->avg('carbon_footprint_change_kg_co2e');
+
+        return is_null($avgCarbonFootprintIn) ? 0 : $avgCarbonFootprintIn;
     }
 
     protected function getFormatValue(float $value, NumberService $numberService): HtmlString

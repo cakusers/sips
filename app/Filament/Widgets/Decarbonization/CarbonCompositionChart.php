@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets\Decarbonization;
 
+use Carbon\Carbon;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
@@ -12,7 +13,7 @@ class CarbonCompositionChart extends ApexChartWidget
 {
 
     protected static ?string $chartId = 'carbonComposition';
-    protected static ?string $heading = 'Jejak Karbon Terbesar Pada Stok Saat Ini';
+    protected static ?string $heading = 'Karbon Terbesar Stok Saat Ini';
 
     protected function getCarbonByCategory(): Collection
     {
@@ -37,29 +38,35 @@ class CarbonCompositionChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $data = $this->getCarbonByCategory();
-        // dd($data);
-        return [
-            'chart' => [
-                'type' => 'donut',
-                'height' => 300,
-            ],
-            'series' => $data->values(),
-            'labels' => $data->keys(),
-            'legend' => [
-                'labels' => [
-                    'fontFamily' => 'inherit',
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            $data = $this->getCarbonByCategory();
+            // dd($data);
+            return [
+                'chart' => [
+                    'type' => 'donut',
+                    'height' => 300,
                 ],
-            ],
-            'plotOptions' => [
-                'pie' => [
-                    'donut' =>  [
-                        'size' => '35%'
+                'series' => $data->values(),
+                'labels' => $data->keys(),
+                'legend' => [
+                    'labels' => [
+                        'fontFamily' => 'inherit',
+                    ],
+                ],
+                'plotOptions' => [
+                    'pie' => [
+                        'donut' =>  [
+                            'size' => '35%'
+                        ]
                     ]
-                ]
 
-            ]
-        ];
+                ]
+            ];
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     protected function extraJsOptions(): ?RawJs
