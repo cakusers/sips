@@ -10,7 +10,7 @@ use Illuminate\Support\HtmlString;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
-class CarbonFootPrintOverview extends BaseWidget
+class DecarbonizationOverview extends BaseWidget
 {
     protected function getStats(): array
     {
@@ -22,20 +22,20 @@ class CarbonFootPrintOverview extends BaseWidget
             $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
 
             // Jejak karbon masuk
-            $currentMonthCarbonIn = $this->getCarbonFootprintIn($currentMonth);
-            $lastMonthCarbonIn = $this->getCarbonFootprintIn($lastMonth);
+            $currentMonthCarbonIn = $this->getDecarbonizationIn($currentMonth);
+            $lastMonthCarbonIn = $this->getDecarbonizationIn($lastMonth);
 
             // Jejak karbon keluar
-            $currentMonthCarbonOut = $this->getCarbonFootprintOut($currentMonth);
-            $lastMonthCarbonOut = $this->getCarbonFootprintOut($lastMonth);
+            $currentMonthCarbonOut = $this->getDecarbonizationOut($currentMonth);
+            $lastMonthCarbonOut = $this->getDecarbonizationOut($lastMonth);
 
             $currentMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($currentMonth);
             $lastMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($lastMonth);
 
             return [
-                $this->createStatCard('Jejak Karbon Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
-                $this->createStatCard('Jejak Karbon Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
-                $this->createStatCard('Rata-Rata Karbon Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
+                $this->createStatCard('Dekarbonisasi Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
+                $this->createStatCard('Dekarbonisasi Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
+                $this->createStatCard('Rata-Rata Dekarbonisasi Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
             ];
         } finally {
             Carbon::setTestNow();
@@ -91,7 +91,7 @@ class CarbonFootPrintOverview extends BaseWidget
         return $result;
     }
 
-    protected function getCarbonFootprintIn(int $month): float
+    protected function getDecarbonizationIn(int $month): float
     {
 
         return StockMovement::query()
@@ -101,7 +101,7 @@ class CarbonFootPrintOverview extends BaseWidget
             ->sum('carbon_footprint_change_kg_co2e');
     }
 
-    protected function getCarbonFootprintOut(int $month): float
+    protected function getDecarbonizationOut(int $month): float
     {
         $totalOut = StockMovement::query()
             ->whereMonth('created_at', $month)

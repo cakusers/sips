@@ -3,31 +3,31 @@
 namespace App\Filament\Widgets\Decarbonization;
 
 use Carbon\Carbon;
-use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonInCompositionChart extends ApexChartWidget
+class DecarbonizationCompositionChart extends ApexChartWidget
 {
-    protected static ?string $chartId = 'carbonInCompositionChart';
-    protected static ?string $heading = 'Total Jejak Karbon Masuk';
 
-    protected function getCarbonInAllTime(): Collection
+    protected static ?string $chartId = 'DecarbonizationCompositionChart';
+    protected static ?string $heading = 'Dekarbonisasi Stok Saat Ini';
+
+    protected function getDecarbonizationByCategory(): Collection
     {
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
             ->select(
                 'waste_categories.name as category_name',
-                DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
+                DB::raw('SUM(stock_movements.carbon_footprint_change_kg_co2e) as total_carbon')
             )
             ->groupBy('category_name')
             ->orderByDesc('total_carbon')
-            ->pluck('total_carbon', 'category_name');
+            ->pluck('total_carbon', 'category_name')
+        ;
     }
 
     /**
@@ -41,7 +41,7 @@ class CarbonInCompositionChart extends ApexChartWidget
         $fakeNow = Carbon::create(2025, 7, 30);
         Carbon::setTestNow($fakeNow);
         try {
-            $data = $this->getCarbonInAllTime();
+            $data = $this->getDecarbonizationByCategory();
             // dd($data);
             return [
                 'chart' => [
@@ -61,6 +61,7 @@ class CarbonInCompositionChart extends ApexChartWidget
                             'size' => '35%'
                         ]
                     ]
+
                 ]
             ];
         } finally {

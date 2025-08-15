@@ -14,10 +14,10 @@ use Filament\Forms\Components\Select;
 use Illuminate\Contracts\Support\Htmlable;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonOutChart extends ApexChartWidget
+class DecarbonizationOutChart extends ApexChartWidget
 {
 
-    protected static ?string $chartId = 'carbonOutChart';
+    protected static ?string $chartId = 'DecarbonizationOutChart';
     protected int | string | array $columnSpan = 'full';
     protected function getHeading(): null|string|Htmlable|View
     {
@@ -25,7 +25,7 @@ class CarbonOutChart extends ApexChartWidget
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Karbon Sampah Keluar %s ';
+        $heading = 'Grafik Dekarbonisasi Keluar %s ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
@@ -272,7 +272,7 @@ class CarbonOutChart extends ApexChartWidget
                 ],
                 'series' => [
                     [
-                        'name' => 'Karbon Keluar',
+                        'name' => 'Dekarbonisasi Keluar',
                         'data' => $data->values()->toArray(),
                     ],
                 ],
@@ -294,7 +294,7 @@ class CarbonOutChart extends ApexChartWidget
                         ],
                     ],
                     'title' => [
-                        'text' => 'Jejak Karbon'
+                        'text' => 'Dekarbonisasi'
                     ]
                 ],
                 'colors' => ['#f97316'],

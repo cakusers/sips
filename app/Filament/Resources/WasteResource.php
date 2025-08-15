@@ -41,56 +41,80 @@ class WasteResource extends Resource
         return $form
             ->schema([
                 Grid::make()
-                    ->columns(2)
+                    ->columns([
+                        'sm' => 1,
+                        'lg' => 2
+                    ])
                     ->schema([
-                        Section::make()->schema([
-                            TextInput::make('name')
-                                ->label('Nama')
-                                ->required(),
+                        Section::make()
+                            ->columnSpan([
+                                'lg' => 1
+                            ])
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Nama')
+                                    ->required(),
 
-                            Select::make('waste_category_id')
-                                ->label('Kategori Sampah')
-                                ->relationship('category', 'name')
-                                ->preload()
-                                ->native(false)
-                                // ->optionsLimit(50)
-                                ->searchable()
-                                ->required()
-                                ->createOptionForm([
-                                    TextInput::make('name')
-                                        ->label('Kategori')
-                                        ->required()
-                                ]),
-                        ])->columnSpan(1),
+                                Select::make('waste_category_id')
+                                    ->label('Kategori Sampah')
+                                    ->relationship('category', 'name')
+                                    ->preload()
+                                    ->native(false)
+                                    // ->optionsLimit(50)
+                                    ->searchable()
+                                    ->required()
+                                    ->createOptionForm([
+                                        TextInput::make('name')
+                                            ->label('Kategori')
+                                            ->required()
+                                    ]),
+                            ]),
 
-                        Section::make()->schema([
-                            TextInput::make('purchase_per_kg')
-                                ->prefix('Rp')
-                                ->label('Harga Beli per Kg')
-                                ->required(),
+                        Section::make()
+                            ->columnSpan([
+                                'lg' => 1
+                            ])
+                            ->schema([
+                                TextInput::make('purchase_per_kg')
+                                    ->prefix('Rp')
+                                    ->label('Harga Beli per Kg')
+                                    ->required(),
 
-                            TextInput::make('selling_per_kg')
-                                ->prefix('Rp')
-                                ->label('Harga Jual per Kg')
-                                ->required(),
-                        ])->columnSpan(1),
+                                TextInput::make('selling_per_kg')
+                                    ->prefix('Rp')
+                                    ->label('Harga Jual per Kg')
+                                    ->required(),
+                            ]),
 
-                        Section::make()->schema([
-                            TextInput::make('stock_in_kg')
-                                ->label('Stok Tersedia')
-                                ->readOnly()
-                                ->default(0)
-                                ->suffix('Kg')
-                                ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
-                        ])->columnSpan(1)
-                            ->hidden(fn($operation) => $operation === 'create'),
-                        Section::make()->schema([
-                            FileUpload::make('img')
-                                ->label('Gambar Sampah')
-                                ->image()
-                                ->directory('sampah')
-                                ->visibility('private'),
-                        ])->columnSpan(fn($operation) => $operation === 'create' ? 2 : 1)
+                        Section::make()
+                            ->columnSpan([
+                                'lg' => 1
+                            ])
+                            ->hidden(fn($operation) => $operation === 'create')
+                            ->schema([
+                                TextInput::make('stock_in_kg')
+                                    ->label('Stok Tersedia')
+                                    ->readOnly()
+                                    ->default(0)
+                                    ->suffix('Kg')
+                                    ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                            ]),
+
+                        Section::make()
+                            ->columnSpan(function ($operation) {
+                                if ($operation === 'create') {
+                                    return 2;
+                                }
+
+                                return 1;
+                            })
+                            ->schema([
+                                FileUpload::make('img')
+                                    ->label('Gambar Sampah')
+                                    ->image()
+                                    ->directory('sampah')
+                                    ->visibility('private'),
+                            ])
                     ])
             ]);
     }

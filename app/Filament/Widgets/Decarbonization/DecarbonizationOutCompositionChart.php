@@ -10,12 +10,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonOutCompositionChart extends ApexChartWidget
+class DecarbonizationOutCompositionChart extends ApexChartWidget
 {
-    protected static ?string $chartId = 'CarbonOutChart';
-    protected static ?string $heading = 'Total Jejak Karbon Keluar';
+    protected static ?string $chartId = 'DecarbonizationOutCompositionChart';
+    protected static ?string $heading = 'Total Dekarbonisasi Keluar';
 
-    protected function getCarbonOutAllTime(): Collection
+    protected function getDecarbonizationOutAllTime(): Collection
     {
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
@@ -44,7 +44,7 @@ class CarbonOutCompositionChart extends ApexChartWidget
         $fakeNow = Carbon::create(2025, 7, 30);
         Carbon::setTestNow($fakeNow);
         try {
-            $data = $this->getCarbonOutAllTime();
+            $data = $this->getDecarbonizationOutAllTime();
             // dd($data);
             return [
                 'chart' => [

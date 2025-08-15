@@ -3,31 +3,31 @@
 namespace App\Filament\Widgets\Decarbonization;
 
 use Carbon\Carbon;
+use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CarbonCompositionChart extends ApexChartWidget
+class DecarbonizationInCompositionChart extends ApexChartWidget
 {
+    protected static ?string $chartId = 'DecarbonizationInCompositionChart';
+    protected static ?string $heading = 'Total Dekarbonisasi Masuk';
 
-    protected static ?string $chartId = 'carbonComposition';
-    protected static ?string $heading = 'Karbon Terbesar Stok Saat Ini';
-
-    protected function getCarbonByCategory(): Collection
+    protected function getDecarbonizationInAllTime(): Collection
     {
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
+            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
             ->select(
                 'waste_categories.name as category_name',
-                DB::raw('SUM(stock_movements.carbon_footprint_change_kg_co2e) as total_carbon')
+                DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
             )
             ->groupBy('category_name')
             ->orderByDesc('total_carbon')
-            ->pluck('total_carbon', 'category_name')
-        ;
+            ->pluck('total_carbon', 'category_name');
     }
 
     /**
@@ -41,7 +41,7 @@ class CarbonCompositionChart extends ApexChartWidget
         $fakeNow = Carbon::create(2025, 7, 30);
         Carbon::setTestNow($fakeNow);
         try {
-            $data = $this->getCarbonByCategory();
+            $data = $this->getDecarbonizationInAllTime();
             // dd($data);
             return [
                 'chart' => [
@@ -61,7 +61,6 @@ class CarbonCompositionChart extends ApexChartWidget
                             'size' => '35%'
                         ]
                     ]
-
                 ]
             ];
         } finally {

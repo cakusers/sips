@@ -43,14 +43,12 @@ class CustomerResource extends Resource
                         ->label('No. Telepon')
                         ->placeholder('081xxxxxxxxxx')
                         ->tel()
-                        ->required()
                         ->maxLength(20),
                     Forms\Components\TextInput::make('email')
                         ->email()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('address')
-                        ->label('Alamat')
-                        ->required(),
+                        ->label('Alamat'),
                     Textarea::make('decription')
                         ->label('Deskripsi')
                         ->columnSpanFull(),

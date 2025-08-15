@@ -161,7 +161,7 @@ class StockMovementResource extends Resource
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => self::strFormat($state)),
                 Tables\Columns\TextColumn::make('carbon_footprint_change_kg_co2e')
-                    ->label(new HtmlString('Jejak Karbon (Kg CO<sub>2</sub>e)'))
+                    ->label(new HtmlString('Dekarbonisasi (Kg CO<sub>2</sub>e)'))
                     ->formatStateUsing(fn($state) => str_replace('.', ',', abs((float) $state)))
                     ->alignCenter()
                     ->toggleable(),
