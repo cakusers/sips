@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if($this->app->environment('production')) {
+            \URL::forceScheme('https');
+        }
         Transaction::observe(TransactionObserver::class);
         TransactionWaste::observe(TransactionWasteObserver::class);
         TextColumn::macro('abbr', function (?string $abbr = null, bool $asTooltip = false): Column {
