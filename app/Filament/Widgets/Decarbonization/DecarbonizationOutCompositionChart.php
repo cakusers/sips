@@ -3,27 +3,156 @@
 namespace App\Filament\Widgets\Decarbonization;
 
 use Carbon\Carbon;
+use Filament\Forms\Get;
 use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\View\View;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Checkbox;
+use Illuminate\Contracts\Support\Htmlable;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class DecarbonizationOutCompositionChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'DecarbonizationOutCompositionChart';
-    protected static ?string $heading = 'Total Dekarbonisasi Keluar';
-
-    protected function getDecarbonizationOutAllTime(): Collection
+    protected function getHeading(): null|string|Htmlable|View
     {
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            $filterMonth = (int) $this->filterFormData['month'];
+            $year = (int) $this->filterFormData['year'];
+            $allTimeOut = $this->filterFormData['allTimeOut'];
+
+            if ($filterMonth === 0) {
+                $filterMonth = Carbon::now()->month;
+            }
+
+            if ($year === 0) {
+                $year = Carbon::now()->year;
+            }
+
+            $month = Carbon::create()->month($filterMonth)
+                ->locale('id')
+                ->translatedFormat('M');
+
+            return !$allTimeOut ? sprintf('Komposisi Dekarbonisasi Masuk %s %s', $month, $year) : 'Komposisi Dekarbonisasi Masuk Sepanjang Waktu';
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    /**
+     * Fungsi Helper untuk mengambil tahun yang ada pada data stock movement
+     * @return Collection tahun
+     */
+    protected static function getAvailableYear(): Collection
+    {
+        return StockMovement::query()
+            ->selectRaw('YEAR(created_at) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year', 'year');
+    }
+
+    /**
+     * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data stock movement
+     * @param   int $year
+     * @return  Collection bulan
+     */
+    protected static function getAvailableMonth(int | string | null $year): Collection
+    {
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            if (is_string($year) || is_null($year)) {
+                $year = Carbon::now()->year;
+            }
+            $months = StockMovement::query()
+                ->whereYear('created_at', $year)
+                ->selectRaw('MONTH(created_at) as month_number')
+                ->distinct()
+                ->orderBy('month_number', 'asc')
+                ->pluck('month_number', 'month_number');
+
+            $months = $months->map(
+                fn($monthNumber) =>
+                Carbon::create()
+                    ->month($monthNumber)
+                    ->locale('id')
+                    ->translatedFormat('F')
+            );
+
+            return $months;
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    /**
+     * Filter
+     */
+    protected function getFormSchema(): array
+    {
+        $fakeNow = Carbon::create(2025, 7, 30);
+        Carbon::setTestNow($fakeNow);
+        try {
+            return [
+                Checkbox::make('allTimeOut')
+                    ->label('Sepanjang Waktu')
+                    ->live(),
+                Select::make('month')
+                    ->label('Bulan')
+                    ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                    ->default(Carbon::now()->month)
+                    ->hidden(fn(Get $get) => $get('allTimeOut'))
+                    ->native(false)
+                    ->live(),
+                Select::make('year')
+                    ->label('Tahun')
+                    ->options($this->getAvailableYear())
+                    ->default(Carbon::now()->year)
+                    ->hidden(fn(Get $get) => $get('allTimeOut'))
+                    ->native(false)
+                    ->live(),
+            ];
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    /**
+     * Mendapatkan data chart berdasarkan bulan, tahun, atau sepanjang waktu
+     * @param int $month
+     * @param int $year
+     * @param ?bool $allTimeOut | untuk mengambil seluruh komposisi sampah dari awal waktu hingga sekarang
+     * @return Collection data
+     */
+    protected function getDecarbonizationOut(int $month, int $year, ?bool $allTimeOut = false): Collection
+    {
+        if ($allTimeOut) {
+            return StockMovement::query()
+                ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
+                ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
+                ->where('carbon_footprint_change_kg_co2e', '<', 0.0)
+                ->select(
+                    'waste_categories.name as category_name',
+                    DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
+                )
+                ->groupBy('category_name')
+                ->orderByDesc('total_carbon')
+                ->pluck('total_carbon', 'category_name');
+        }
+
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-            ->whereIn('type', [
-                MovementType::SELLOUT,
-                MovementType::MANUALOUT
-            ])
+            ->where('carbon_footprint_change_kg_co2e', '<', 0.0)
+            ->whereMonth('stock_movements.created_at', $month)
+            ->whereYear('stock_movements.created_at', $year)
             ->select(
                 'waste_categories.name as category_name',
                 DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
@@ -44,8 +173,20 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
         $fakeNow = Carbon::create(2025, 7, 30);
         Carbon::setTestNow($fakeNow);
         try {
-            $data = $this->getDecarbonizationOutAllTime();
-            // dd($data);
+            $month = (int) $this->filterFormData['month'];
+            $year = (int) $this->filterFormData['year'];
+            $allTimeOut = $this->filterFormData['allTimeOut'];
+
+            if ($month === 0) {
+                $month = Carbon::now()->month;
+            }
+
+            if ($year === 0) {
+                $year = Carbon::now()->year;
+            }
+
+            $data = $this->getDecarbonizationOut($month, $year, $allTimeOut);
+
             return [
                 'chart' => [
                     'type' => 'donut',

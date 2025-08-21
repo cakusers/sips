@@ -29,13 +29,13 @@ class DecarbonizationOverview extends BaseWidget
             $currentMonthCarbonOut = $this->getDecarbonizationOut($currentMonth);
             $lastMonthCarbonOut = $this->getDecarbonizationOut($lastMonth);
 
-            $currentMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($currentMonth);
-            $lastMonthAvgCarbonIn = $this->getAvgCarbonFootprintIn($lastMonth);
+            $currentMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($currentMonth);
+            $lastMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($lastMonth);
 
             return [
                 $this->createStatCard('Dekarbonisasi Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
                 $this->createStatCard('Dekarbonisasi Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
-                $this->createStatCard('Rata-Rata Dekarbonisasi Masuk Bulan Ini', $currentMonthAvgCarbonIn, $lastMonthAvgCarbonIn, app(NumberService::class)),
+                $this->createStatCard('Rata-Rata Dekarbonisasi Keluar Bulan Ini', $currentMonthAvgCarbonOut, $lastMonthAvgCarbonOut, app(NumberService::class)),
             ];
         } finally {
             Carbon::setTestNow();
@@ -112,15 +112,15 @@ class DecarbonizationOverview extends BaseWidget
         return abs($totalOut);
     }
 
-    protected function getAvgCarbonFootprintIn(int $month): float
+    protected function getAvgCarbonFootprintOut(int $month): float
     {
-        $avgCarbonFootprintIn =  StockMovement::query()
+        $avgCarbonFootprintOut =  StockMovement::query()
             ->whereMonth('created_at', $month)
             ->whereYear('created_at', Carbon::now()->year)
-            ->where('quantity_change_kg', '>', '0')
+            ->where('quantity_change_kg', '<', '0')
             ->avg('carbon_footprint_change_kg_co2e');
 
-        return is_null($avgCarbonFootprintIn) ? 0 : $avgCarbonFootprintIn;
+        return is_null($avgCarbonFootprintOut) ? 0 : abs($avgCarbonFootprintOut);
     }
 
     protected function getFormatValue(float $value, NumberService $numberService): HtmlString
@@ -128,22 +128,4 @@ class DecarbonizationOverview extends BaseWidget
         $formattedValue = $numberService->decimal($value);
         return new HtmlString($formattedValue . ' Kg CO<sub>2</sub>e');
     }
-
-    // protected function dynamicDecimalFormat(float $number): string
-    // {
-    //     if (!is_numeric($number)) {
-    //         return '0';
-    //     }
-
-    //     $decimalPlaces  = 0;
-    //     $numberStr = (string)$number;
-    //     // Cek apakah ada desimal dengan mencari posisi karakter '.'
-    //     if (strpos($numberStr, '.') !== false) {
-    //         // Ambil bagian string setelah '.' dan hitung panjangnya
-    //         $decimalPart = substr($numberStr, strpos($numberStr, '.') + 1);
-    //         $decimalPlaces = strlen($decimalPart);
-    //     }
-
-    //     return number_format($number, $decimalPlaces, ',', '.');
-    // }
 }

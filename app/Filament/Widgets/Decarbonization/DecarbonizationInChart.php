@@ -23,7 +23,7 @@ class DecarbonizationInChart extends ApexChartWidget
         $month = '';
         $year = '';
 
-        $heading = ' Grafik Dekarbonisasi Masuk %s ';
+        $heading = 'Grafik Dekarbonisasi Masuk %s ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
