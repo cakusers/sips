@@ -19,76 +19,68 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
     protected static ?string $chartId = 'DecarbonizationInCompositionChart';
     protected function getHeading(): null|string|Htmlable|View
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            $filterMonth = (int) $this->filterFormData['month'];
-            $year = (int) $this->filterFormData['year'];
-            $allTimeIn = $this->filterFormData['allTimeIn'];
+        $filterMonth = $this->filterFormData['month'];
+        $year = $this->filterFormData['year'] ? $this->filterFormData['year'] : '';
+        $allTimeIn = $this->filterFormData['allTimeIn'];
 
-            if ($filterMonth === 0) {
-                $filterMonth = Carbon::now()->month;
-            }
-
-            if ($year === 0) {
-                $year = Carbon::now()->year;
-            }
-
-            $month = Carbon::create()->month($filterMonth)
+        if (!$filterMonth) {
+            $monthName = '';
+        } else {
+            $monthName = Carbon::create()->month((int) $filterMonth)
                 ->locale('id')
                 ->translatedFormat('M');
-
-            return !$allTimeIn ? sprintf('Komposisi Dekarbonisasi Masuk %s %s', $month, $year) : 'Komposisi Dekarbonisasi Masuk Sepanjang Waktu';
-        } finally {
-            Carbon::setTestNow();
         }
+
+        if ($allTimeIn) {
+            return 'Komposisi Dekarbonisasi Masuk Sepanjang Waktu';
+        }
+
+        if (!$monthName || !$year) {
+            return 'Komposisi Dekarbonisasi Masuk (Periode Invalid)';
+        }
+
+        return sprintf('Komposisi Dekarboinsasi Masuk %s %s', $monthName, $year);
     }
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data stock movement
-     * @return Collection tahun
+     * @return array [tahun => tahun]
      */
-    protected static function getAvailableYear(): Collection
+    protected static function getAvailableYear(): array
     {
-        return StockMovement::query()
-            ->selectRaw('YEAR(created_at) as year')
+        return StockMovement::selectRaw('YEAR(created_at) as year')
             ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year', 'year');
+            ->pluck('year', 'year')
+            ->toArray();
     }
 
     /**
      * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data stock movement
      * @param   int $year
-     * @return  Collection bulan
+     * @return  array [nomerBulan => namaBulan]
      */
-    protected static function getAvailableMonth(int | string | null $year): Collection
+    protected static function getAvailableMonth(int | string | null $year): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            if (is_string($year) || is_null($year)) {
-                $year = Carbon::now()->year;
-            }
-            $months = StockMovement::query()
-                ->whereYear('created_at', $year)
-                ->selectRaw('MONTH(created_at) as month_number')
-                ->distinct()
-                ->orderBy('month_number', 'asc')
-                ->pluck('month_number', 'month_number');
-
-            $months = $months->map(
-                fn($monthNumber) =>
-                Carbon::create()
-                    ->month($monthNumber)
-                    ->locale('id')
-                    ->translatedFormat('F')
-            );
-
-            return $months;
-        } finally {
-            Carbon::setTestNow();
+        if (!$year) {
+            return [];
         }
+
+        $months = StockMovement::query()
+            ->whereYear('created_at', $year)
+            ->selectRaw('MONTH(created_at) as month_number')
+            ->distinct()
+            ->orderBy('month_number', 'asc')
+            ->pluck('month_number', 'month_number');
+
+        $months = $months->map(
+            fn($monthNumber) =>
+            Carbon::create()
+                ->month($monthNumber)
+                ->locale('id')
+                ->translatedFormat('F')
+        );
+
+        return $months->toArray();
     }
 
     /**
@@ -125,13 +117,25 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
 
     /**
      * Mendapatkan data chart berdasarkan bulan, tahun, atau sepanjang waktu
-     * @param int $month
-     * @param int $year
-     * @param ?bool $allTimeIn | untuk mengambil seluruh komposisi sampah dari awal waktu hingga sekarang
+     * @param (int | string | null) $month
+     * @param  (int | string | null) $year
+     * @param ?bool $allTimeIn untuk mengambil seluruh komposisi sampah dari awal waktu hingga sekarang
      * @return Collection data
      */
-    protected function getDecarbonizationIn(int $month, int $year, ?bool $allTimeIn = false): Collection
+    protected function getDecarbonizationIn(int|string|null $month, int|string|null $year, ?bool $allTimeIn = false): Collection
     {
+        if (!$month) {
+            return collect([
+                'Tahun atau Bulan Tidak Valid' => 0
+            ]);
+        }
+
+        if (!$year) {
+            return collect([
+                'Tahun atau Bulan Tidak Valid' => 0
+            ]);
+        }
+
         if ($allTimeIn) {
             return StockMovement::query()
                 ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
@@ -173,17 +177,10 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
         $fakeNow = Carbon::create(2025, 7, 30);
         Carbon::setTestNow($fakeNow);
         try {
-            $month = (int) $this->filterFormData['month'];
-            $year = (int) $this->filterFormData['year'];
+            // dd($this->getAvailableMonth(2025));
+            $month = $this->filterFormData['month'];
+            $year = $this->filterFormData['year'];
             $allTimeIn = $this->filterFormData['allTimeIn'];
-
-            if ($month === 0) {
-                $month = Carbon::now()->month;
-            }
-
-            if ($year === 0) {
-                $year = Carbon::now()->year;
-            }
 
             $data = $this->getDecarbonizationIn($month, $year, $allTimeIn);
 
