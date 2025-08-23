@@ -4,12 +4,12 @@ namespace App\Filament\Widgets\Sales;
 
 use Carbon\Carbon;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Carbon\CarbonPeriod;
 use App\Models\Transaction;
 use Filament\Support\RawJs;
 use App\Enums\TransactionType;
 use App\Enums\TransactionStatus;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
@@ -26,28 +26,43 @@ class GrossProfitChart extends ApexChartWidget
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Laba Kotor %s ';
+        $heading = 'Grafik Laba Kotor ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
                 $period = 'Mingguan';
-                $filterMonth = (int) $this->filterFormData['month'];
-                $month = Carbon::create()->month($filterMonth)
+                $filterMonth = $this->filterFormData['month'];
+                $year = $this->filterFormData['year'];
+
+                if (!$filterMonth || !$year) {
+                    return $heading . '(Periode Invalid)';
+                }
+
+                $month = Carbon::create()->month((int) $filterMonth)
                     ->locale('id')
                     ->translatedFormat('M');
-                $year = $this->filterFormData['year'];
-                $heading = sprintf($heading . '( %s %s )', $period, $month, $year);
+
+                $heading = sprintf($heading . '%s ( %s %s )', $period, $month, $year);
                 break;
 
             case 'monthly':
                 $period = 'Bulanan';
                 $year = $this->filterFormData['year'];
-                $heading = sprintf($heading . '( %s )', $period, $year);
+
+                if (!$year) {
+                    return $heading . '(Periode Invalid)';
+                }
+
+                $heading = sprintf($heading . '%s ( %s )', $period, $year);
+                break;
+
+            case 'yearly':
+                $period = 'Tahunan';
+                $heading = sprintf($heading . '%s', $period);
                 break;
 
             default:
-                $period = 'Tahunan';
-                $heading = sprintf($heading, $period);
+                $heading = $heading . '(Periode Invalid)';
                 break;
         }
 
@@ -57,25 +72,30 @@ class GrossProfitChart extends ApexChartWidget
     protected static ?string $footer = 'Menampilkan estimasi laba kotor (Pendapatan - Pembelian) dari transaksi yang telah selesai';
 
     /**
-     * Fungsi Helper untuk mengambil tahun yang ada pada data transaksi
-     * @return Collection tahun
+     * Fungsi Helper untuk mengambil tahun yang ada pada data stock movement
+     * @return array [tahun => tahun]
      */
-    protected static function getAvailableYear(): Collection
+    protected static function getAvailableYear(): array
     {
         return Transaction::query()
             ->selectRaw('YEAR(created_at) as year')
             ->distinct()
             ->orderBy('year', 'desc')
-            ->pluck('year', 'year');
+            ->pluck('year', 'year')
+            ->toArray();
     }
 
     /**
-     * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data transaksi
-     * @param   int $year
-     * @return  Collection bulan
+     * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data stock movement
+     * @param   (int | string | null) $year
+     * @return  array [nomerBulan => namaBulan]
      */
-    protected static function getAvailableMonth(int $year): Collection
+    protected static function getAvailableMonth(int|string|null $year): array
     {
+        if (!$year) {
+            return [];
+        }
+
         $months = Transaction::query()
             ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month_number')
@@ -91,7 +111,7 @@ class GrossProfitChart extends ApexChartWidget
                 ->translatedFormat('F')
         );
 
-        return $months;
+        return $months->toArray();
     }
 
     /**
@@ -110,6 +130,7 @@ class GrossProfitChart extends ApexChartWidget
                         'monthly' => 'Bulanan',
                         'yearly' => 'Tahunan'
                     ])
+                    ->native(false)
                     ->default('weekly')
                     ->live(),
                 /**
@@ -120,6 +141,7 @@ class GrossProfitChart extends ApexChartWidget
                     ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
                     ->default(Carbon::now()->month)
                     ->visible(fn(Get $get) => $get('period') === 'weekly')
+                    ->native(false)
                     ->live(),
                 /**
                  * Tampilkan ketika period mingguan dan bulanan
@@ -127,8 +149,10 @@ class GrossProfitChart extends ApexChartWidget
                 Select::make('year')
                     ->label('Tahun')
                     ->options($this->getAvailableYear())
+                    ->afterStateUpdated(fn(Set $set, $state) => !$state ? $set('month', null) : $state)
                     ->default(Carbon::now()->year)
                     ->hidden(fn(Get $get) => $get('period') === 'yearly')
+                    ->native(false)
                     ->live(),
             ];
         } finally {
@@ -138,7 +162,7 @@ class GrossProfitChart extends ApexChartWidget
 
     /**
      * Mendapatkan data laba kotor Tahunan
-     * @return Collection laba kotor per tahun
+     * @return Collection laba kotor per tahun [tahun => laba kotor]
      */
     protected function getGrossProfitYearly(): Collection
     {
@@ -167,11 +191,17 @@ class GrossProfitChart extends ApexChartWidget
 
     /**
      * Mendapatkan data laba kotor Bulanan dalam tahun tertentu
-     * @param   int $year
+     * @param   (int | string | null) $year
      * @return  Collection laba kotor per bulan
      */
-    protected function getGrossProfitMonthly(int $year): Collection
+    protected function getGrossProfitMonthly(int|string|null $year): Collection
     {
+        if (!$year) {
+            return collect([
+                'invalid' => 0
+            ]);
+        }
+
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
         $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
         $monthlyGrossProfit = Transaction::query()
@@ -215,12 +245,18 @@ class GrossProfitChart extends ApexChartWidget
 
     /**
      * Mendapatkan data laba kotor Mingguan dalam bulan dan tahun tertentu
-     * @param   int $month
-     * @param   int $year
+     * @param   (int | string | null) $month
+     * @param   (int | string | null) $year
      * @return  Collection laba kotor per minggu
      */
-    protected function getGrossProfitWeekly(int $month, int $year): Collection
+    protected function getGrossProfitWeekly(int|string|null $month, int|string|null $year): Collection
     {
+        if (!$month || !$year) {
+            return collect([
+                'invalid' => 0
+            ]);
+        }
+
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth()->startOfWeek(Carbon::MONDAY) : Carbon::create($year, $month)->startOfMonth()->startOfWeek(Carbon::MONDAY);
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth()->endOfWeek(Carbon::SUNDAY);
         $weeklyGrossProfit = Transaction::query()
@@ -263,9 +299,13 @@ class GrossProfitChart extends ApexChartWidget
         return $result;
     }
 
-    protected function getChartData(string $period): Collection
+    /**
+     * Mendapatkan data chart berdasarkan periode yang dipilih pada filter
+     * @param ?string $period (tahunan, bulanan, mingguan)
+     * @return Collection $data
+     */
+    protected function getChartData(?string $period): Collection
     {
-
         $data = collect();
         switch ($period) {
             case 'yearly':
@@ -277,10 +317,16 @@ class GrossProfitChart extends ApexChartWidget
                 $data = $this->getGrossProfitMonthly($year);
                 break;
 
-            default:
+            case 'weekly':
                 $month = $this->filterFormData['month'];
                 $year = $this->filterFormData['year'];
                 $data = $this->getGrossProfitWeekly($month, $year);
+                break;
+
+            default:
+                $data = collect([
+                    'invalid' => 0
+                ]);
                 break;
         }
 

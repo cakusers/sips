@@ -86,7 +86,7 @@ class DecarbonizationInChart extends ApexChartWidget
      * @param   (int | string | null) $year
      * @return  array [nomerBulan => namaBulan]
      */
-    protected static function getAvailableMonth(int | string | null $year): array
+    protected static function getAvailableMonth(int|string|null $year): array
     {
         if (!$year) {
             return [];
@@ -276,7 +276,7 @@ class DecarbonizationInChart extends ApexChartWidget
                 $data = $this->getMonthlyCarbonIn($year);
                 break;
 
-            case 'yearly':
+           case 'yearly':
                 $data = $this->getYearlyCarbonIn();
                 break;
 
@@ -291,7 +291,7 @@ class DecarbonizationInChart extends ApexChartWidget
     }
 
     /**
-     * Chart options (series, labels, types, size, animations...)
+     * Chart options (seri es, labels, types, size, animations...)
      * https://apexcharts.com/docs/options
      *
      * @return array
