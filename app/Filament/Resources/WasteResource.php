@@ -95,6 +95,7 @@ class WasteResource extends Resource
                                 TextInput::make('stock_in_kg')
                                     ->label('Stok Tersedia')
                                     ->readOnly()
+                                    ->dehydrated(false)
                                     ->default(0)
                                     ->suffix('Kg')
                                     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))

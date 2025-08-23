@@ -16,12 +16,6 @@ class CreateWaste extends CreateRecord
 
     protected ?bool $hasDatabaseTransactions = true;
 
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $data['stock_in_kg'] = (float) str_replace(',', '.', $data['stock_in_kg']);
-        return $data;
-    }
-
     protected function handleRecordCreation(array $data): Model
     {
         $waste = Waste::create([

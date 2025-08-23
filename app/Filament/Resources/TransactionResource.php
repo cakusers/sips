@@ -255,7 +255,9 @@ class TransactionResource extends Resource
                                 )
                                 ->createOptionForm([
                                     Grid::make()
-                                        ->columns(2)
+                                        ->columns([
+                                            'lg' => 2
+                                        ])
                                         ->schema([
                                             Section::make()->schema([
                                                 TextInput::make('name')
@@ -291,15 +293,6 @@ class TransactionResource extends Resource
                                                     ->required(),
                                             ])->columnSpan(1),
 
-                                            Section::make()->schema([
-                                                TextInput::make('stock_in_kg')
-                                                    ->label('Stok Tersedia')
-                                                    ->readOnly()
-                                                    ->default(0)
-                                                    ->suffix('Kg')
-                                                    ->dehydrateStateUsing(fn($state) => str_replace(',', '.', $state)),
-
-                                            ])->columnSpan(1),
                                             Section::make()->schema([
                                                 FileUpload::make('img')
                                                     ->label('Gambar Sampah')
