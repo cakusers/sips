@@ -403,10 +403,6 @@ class TransactionResource extends Resource
                         ->required()
                         ->readOnly()
                         ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
-                    TextInput::make('address')
-                        ->label('Alamat Pelanggan')
-                        ->disabled(fn(Get $get) => $get('status') !== 'Baru')
-                        ->readOnly(),
                 ])->columns(2),
             ]);
     }
