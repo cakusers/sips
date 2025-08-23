@@ -28,9 +28,9 @@ class WasteCategoryResource extends Resource
 
     protected static ?string $navigationLabel = 'Data Kategori Sampah';
 
-    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
+    protected static ?string $navigationGroup = 'Data Master';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {

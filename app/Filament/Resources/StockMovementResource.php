@@ -22,10 +22,10 @@ class StockMovementResource extends Resource
     protected static ?string $model = StockMovement::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
+    protected static ?string $navigationGroup = 'Umum';
     protected static ?string $navigationLabel = 'Data Stok';
     protected static ?string $label = 'Data Stok';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
     public static function canEdit(Model $record): bool
     {

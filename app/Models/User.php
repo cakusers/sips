@@ -47,6 +47,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class
         ];
     }
 
@@ -55,18 +56,8 @@ class User extends Authenticatable implements FilamentUser
     //     return $this->avatar_url;
     // }
 
-
-    public function isAdmin(): bool
-    {
-        return $this->role !== UserRole::ADMIN->value;
-    }
-
     public function canAccessPanel(Panel $panel): bool
     {
-        if ($panel->getId() === 'admin') {
-            return $this->isAdmin();
-        }
-
         return true;
     }
 

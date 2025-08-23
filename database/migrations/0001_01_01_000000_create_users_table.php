@@ -20,9 +20,9 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->enum('role', [
-                UserRole::ADMIN->value,
-                UserRole::USER->value
-            ])->default(UserRole::USER->value);
+                UserRole::OWNER->value,
+                UserRole::ADMIN->value
+            ])->default(UserRole::ADMIN->value);
             $table->timestamps();
         });
 

@@ -30,11 +30,11 @@ class WasteResource extends Resource
 
     protected static ?string $navigationLabel = 'Data Sampah';
 
-    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
+    protected static ?string $navigationGroup = 'Data Master';
 
     protected static ?string $label = 'Data Sampah';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 6;
 
     public static function form(Form $form): Form
     {

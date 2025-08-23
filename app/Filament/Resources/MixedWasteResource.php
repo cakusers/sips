@@ -34,8 +34,8 @@ class MixedWasteResource extends Resource
     public static ?string $label = 'Daftar Sampah Campuran';
     public static ?string $navigationLabel = 'Sortir Sampah Campuran';
     public static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
-    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
-    public static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Umum';
+    public static ?int $navigationSort = 4;
 
     public static function canCreate(): bool
     {

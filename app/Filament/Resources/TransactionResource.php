@@ -45,8 +45,8 @@ class TransactionResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
     protected static ?string $navigationLabel = 'Data Transaksi';
     protected static ?string $label = 'Data Transaksi';
-    protected static ?string $navigationGroup = 'Pengelolaan Sampah';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationGroup = 'Umum';
+    protected static ?int $navigationSort = 3;
 
     protected static array $transactionType = [
         TransactionType::PURCHASE->value => 'Beli',
