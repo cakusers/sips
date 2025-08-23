@@ -63,7 +63,7 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
 
     /**
      * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data stock movement
-     * @param   int $year
+     * @param   (int | string | null) $year
      * @return  array [nomerBulan => namaBulan]
      */
     protected static function getAvailableMonth(int | string | null $year): array

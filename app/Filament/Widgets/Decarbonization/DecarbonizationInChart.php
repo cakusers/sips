@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Decarbonization;
 
 use Carbon\Carbon;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Carbon\CarbonPeriod;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
@@ -23,28 +24,43 @@ class DecarbonizationInChart extends ApexChartWidget
         $month = '';
         $year = '';
 
-        $heading = 'Grafik Dekarbonisasi Masuk %s ';
+        $heading = 'Grafik Dekarbonisasi Masuk ';
 
         switch ($this->filterFormData['period']) {
             case 'weekly':
                 $period = 'Mingguan';
-                $filterMonth = (int) $this->filterFormData['month'];
-                $month = Carbon::create()->month($filterMonth)
+                $filterMonth = $this->filterFormData['month'];
+                $year = $this->filterFormData['year'];
+
+                if (!$filterMonth || !$year) {
+                    return $heading . '(Periode Invalid)';
+                }
+
+                $month = Carbon::create()->month((int) $filterMonth)
                     ->locale('id')
                     ->translatedFormat('M');
-                $year = $this->filterFormData['year'];
-                $heading = sprintf($heading . '( %s %s )', $period, $month, $year);
+
+                $heading = sprintf($heading . '%s ( %s %s )', $period, $month, $year);
                 break;
 
             case 'monthly':
                 $period = 'Bulanan';
                 $year = $this->filterFormData['year'];
-                $heading = sprintf($heading . '( %s )', $period, $year);
+
+                if (!$year) {
+                    return $heading . '(Periode Invalid)';
+                }
+
+                $heading = sprintf($heading . '%s ( %s )', $period, $year);
+                break;
+
+            case 'yearly':
+                $period = 'Tahunan';
+                $heading = sprintf($heading . '%s', $period);
                 break;
 
             default:
-                $period = 'Tahunan';
-                $heading = sprintf($heading, $period);
+                $heading = $heading . '(Periode Invalid)';
                 break;
         }
 
@@ -53,24 +69,29 @@ class DecarbonizationInChart extends ApexChartWidget
 
     /**
      * Fungsi Helper untuk mengambil tahun yang ada pada data stock movement
-     * @return Collection tahun
+     * @return array [tahun => tahun]
      */
-    protected static function getAvailableYear(): Collection
+    protected static function getAvailableYear(): array
     {
         return StockMovement::query()
             ->selectRaw('YEAR(created_at) as year')
             ->distinct()
             ->orderBy('year', 'desc')
-            ->pluck('year', 'year');
+            ->pluck('year', 'year')
+            ->toArray();
     }
 
     /**
      * Fungsi Helper untuk mengambil Bulan pada tahun tertentu yang ada pada data stock movement
-     * @param   int $year
-     * @return  Collection bulan
+     * @param   (int | string | null) $year
+     * @return  array [nomerBulan => namaBulan]
      */
-    protected static function getAvailableMonth(int $year): Collection
+    protected static function getAvailableMonth(int | string | null $year): array
     {
+        if (!$year) {
+            return [];
+        }
+
         $months = StockMovement::query()
             ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month_number')
@@ -86,7 +107,7 @@ class DecarbonizationInChart extends ApexChartWidget
                 ->translatedFormat('F')
         );
 
-        return $months;
+        return $months->toArray();
     }
 
     /**
@@ -106,6 +127,7 @@ class DecarbonizationInChart extends ApexChartWidget
                         'yearly' => 'Tahunan'
                     ])
                     ->default('weekly')
+                    ->native(false)
                     ->live(),
                 /**
                  * Tampilkan ketika period mingguan
@@ -115,6 +137,7 @@ class DecarbonizationInChart extends ApexChartWidget
                     ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
                     ->default(Carbon::now()->month)
                     ->visible(fn(Get $get) => $get('period') === 'weekly')
+                    ->native(false)
                     ->live(),
                 /**
                  * Tampilkan ketika period mingguan dan bulanan
@@ -122,8 +145,10 @@ class DecarbonizationInChart extends ApexChartWidget
                 Select::make('year')
                     ->label('Tahun')
                     ->options($this->getAvailableYear())
+                    ->afterStateUpdated(fn(Set $set, $state) => !$state ? $set('month', null) : $state)
                     ->default(Carbon::now()->year)
                     ->hidden(fn(Get $get) => $get('period') === 'yearly')
+                    ->native(false)
                     ->live(),
             ];
         } finally {
@@ -133,12 +158,12 @@ class DecarbonizationInChart extends ApexChartWidget
 
     /**
      * Mendapatkan data Tahunan dari karbon yang masuk
-     * @return Collection pendapatan per tahun
+     * @return Collection karbon masuk per tahun [tahun => karbon]
      */
     protected function getYearlyCarbonIn(): Collection
     {
         $yearlyCarbon = StockMovement::query()
-            ->whereIn('carbon_footprint_change_kg_co2e', '>', 0.0)
+            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
             ->selectRaw("YEAR(created_at) as year, SUM(carbon_footprint_change_kg_co2e) as carbon")
             ->groupBy('year')
             ->pluck('carbon', 'year');
@@ -148,11 +173,17 @@ class DecarbonizationInChart extends ApexChartWidget
 
     /**
      * Mendapatkan data Bulanan dari karbon yang masuk dalam tahun tertentu
-     * @param   int $year
-     * @return  Collection pembelian per bulan
+     * @param   (int | string | null) $year
+     * @return  Collection karbon masuk per bulan ['bulan, tahun' => karbon]
      */
-    protected function getMonthlyCarbonIn(int $year): Collection
+    protected function getMonthlyCarbonIn(int|string|null $year): Collection
     {
+        if (!$year) {
+            return collect([
+                'invalid' => 0
+            ]);
+        }
+
         $startDate = $year === Carbon::now()->year ? Carbon::now()->startOfYear() : Carbon::create($year)->startOfYear();
         $endDate = $year === Carbon::now()->year ? Carbon::now() : Carbon::create($year)->endOfYear();
 
@@ -183,12 +214,18 @@ class DecarbonizationInChart extends ApexChartWidget
 
     /**
      * Mendapatkan data Mingguan dari karbon yang masuk dalam bulan dan tahun tertentu
-     * @param   int $month
-     * @param   int $year
-     * @return  Collection pendapatan per minggu
+     * @param   (int | string | null) $month
+     * @param   (int | string | null) $year
+     * @return  Collection karbon masuk per minggu ['tgl awal minggu, bulan, tahun' => karbon]
      */
-    protected function getWeeklyCarbonIn(int $month, int $year): Collection
+    protected function getWeeklyCarbonIn(int|string|null $month, int|string|null $year): Collection
     {
+        if (!$month || !$year) {
+            return collect([
+                'invalid' => 0
+            ]);
+        }
+
         $startDate = $month === Carbon::now()->month ? Carbon::now()->startOfMonth()->startOfWeek(Carbon::MONDAY) : Carbon::create($year, $month)->startOfMonth()->startOfWeek(Carbon::MONDAY);
         $endDate = $month === Carbon::now()->month ? Carbon::now() : Carbon::create($year, $month)->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
@@ -222,26 +259,31 @@ class DecarbonizationInChart extends ApexChartWidget
 
     /**
      * Mendapatkan data chart berdasarkan periode yang dipilih pada filter
-     * @param string $period (tahunan, bulanan, mingguan)
+     * @param ?string $period (tahunan, bulanan, mingguan)
      * @return Collection $data
      */
-    protected function getChartData(string $period): Collection
+    protected function getChartData(?string $period): Collection
     {
         $data = collect();
         switch ($period) {
+            case 'weekly':
+                $month = $this->filterFormData['month'];
+                $year = $this->filterFormData['year'];
+                $data = $this->getWeeklyCarbonIn($month, $year);
+                break;
+            case 'monthly':
+                $year = $this->filterFormData['year'];
+                $data = $this->getMonthlyCarbonIn($year);
+                break;
+
             case 'yearly':
                 $data = $this->getYearlyCarbonIn();
                 break;
 
-            case 'monthly':
-                $year = $year = $this->filterFormData['year'];
-                $data = $this->getMonthlyCarbonIn($year);
-                break;
-
             default:
-                $month = $this->filterFormData['month'];
-                $year = $this->filterFormData['year'];
-                $data = $this->getWeeklyCarbonIn($month, $year);
+                $data = collect([
+                    'invalid' => 0
+                ]);
                 break;
         }
 
