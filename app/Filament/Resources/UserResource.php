@@ -21,7 +21,7 @@ class UserResource extends Resource
     protected static ?string $label = 'Data Pengguna';
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
     protected static ?string $navigationGroup = 'Data Master';
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 10;
     public static function canViewAny(): bool
     {
         return Auth::user()->role === UserRole::OWNER;

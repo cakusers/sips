@@ -34,25 +34,49 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()->schema([
-                    Forms\Components\TextInput::make('name')
-                        ->label('Nama')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('phone')
-                        ->label('No. Telepon')
-                        ->placeholder('081xxxxxxxxxx')
-                        ->tel()
-                        ->maxLength(20),
-                    Forms\Components\TextInput::make('email')
-                        ->email()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('address')
-                        ->label('Alamat'),
-                    Textarea::make('decription')
-                        ->label('Deskripsi')
-                        ->columnSpanFull(),
-                ])->columns(2)
+                Section::make()
+                    ->columns([
+                        'lg' => 2
+                    ])
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('customer_type_id')
+                            ->label('Tipe Pelanggan')
+                            ->relationship('customerType', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->createOptionForm([
+                                Forms\Components\Section::make()
+                                    ->columnSpan([
+                                        'lg' => 1
+                                    ])
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nama')
+                                            ->required()
+                                            ->maxLength(255),
+                                    ]),
+                            ]),
+                        Forms\Components\TextInput::make('phone')
+                            ->label('No. Telepon')
+                            ->placeholder('081xxxxxxxxxx')
+                            ->tel()
+                            ->maxLength(20),
+                        Forms\Components\TextInput::make('email')
+                            ->email()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('address')
+                            ->label('Alamat')
+                            ->columnSpanFull(),
+                        Textarea::make('decription')
+                            ->label('Catatan')
+                            ->columnSpanFull(),
+                    ])
             ]);
     }
 
@@ -65,6 +89,7 @@ class CustomerResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(20)
+                    ->toggleable()
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
 
@@ -75,12 +100,17 @@ class CustomerResource extends Resource
                         // Only render the tooltip if the column content exceeds the length limit.
                         return $state;
                     }),
+                Tables\Columns\TextColumn::make('customerType.name')
+                    ->badge()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('No. Telepon')
+                    ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->sortable()
+                    ->toggleable()
                     ->default('-')
                     ->limit(40)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {

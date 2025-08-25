@@ -18,6 +18,10 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->string('descriptions')->nullable();
+            $table->foreignId('customer_type_id')
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete();
             $table->timestamps();
         });
     }
