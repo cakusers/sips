@@ -116,7 +116,7 @@ class SortMixedWaste extends Page implements HasForms
                             ->live()
                             ->rules([
                                 fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    $total = 0;
+                                    $totalQty = 0;
                                     $items = $value;
                                     $maxQty = $get('qty_in_kg');
                                     $sortedQty = 0;
@@ -124,18 +124,18 @@ class SortMixedWaste extends Page implements HasForms
                                     if (is_array($items)) {
                                         foreach ($items as $item) {
                                             $sortedQty = (float) str_replace(',', '.', $item['qty_in_kg']) ?? '0';
-                                            $total += $sortedQty;
+                                            $totalQty += $sortedQty;
                                         }
                                     }
 
-                                    if ($maxQty < $sortedQty) {
+                                    if ($maxQty < $totalQty) {
                                         Notification::make()
                                             ->title('Gagal Menyimpan Data')
                                             ->body('Berat sampah pilahan melebihi sampah campuran awal')
                                             ->icon('heroicon-o-x-circle')
                                             ->danger()
                                             ->send();
-                                        $fail("Berat sampah pilahan melebihi sampah campuran");
+                                        $fail("Berat sampah yang dipilah melebihi sampah campuran");
                                     }
                                 }
                             ])
