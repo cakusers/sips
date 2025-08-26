@@ -23,8 +23,8 @@ class Customer extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function customerType(): BelongsTo
+    public function customerCategory(): BelongsTo
     {
-        return $this->belongsTo(CustomerType::class);
+        return $this->belongsTo(CustomerCategory::class);
     }
 }

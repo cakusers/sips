@@ -11,7 +11,8 @@ class WastePrice extends Model
     protected $fillable = [
         'purchase_per_kg',
         'selling_per_kg',
-        'waste_id'
+        'waste_id',
+        'customer_type_id'
     ];
 
     public function waste(): BelongsTo

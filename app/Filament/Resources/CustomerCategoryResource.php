@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CustomerTypeResource\Pages;
-use App\Filament\Resources\CustomerTypeResource\RelationManagers;
-use App\Models\CustomerType;
+use App\Filament\Resources\CustomerCategoryResource\Pages;
+use App\Filament\Resources\CustomerCategoryResource\RelationManagers;
+use App\Models\CustomerCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,9 +13,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CustomerTypeResource extends Resource
+class CustomerCategoryResource extends Resource
 {
-    protected static ?string $model = CustomerType::class;
+    protected static ?string $model = CustomerCategory::class;
     protected static ?string $label = 'Data Tipe Pelanggan';
     protected static ?string $navigationGroup = 'Data Master';
     protected static ?int $navigationSort = 9;
@@ -78,9 +78,9 @@ class CustomerTypeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCustomerTypes::route('/'),
-            'create' => Pages\CreateCustomerType::route('/create'),
-            'edit' => Pages\EditCustomerType::route('/{record}/edit'),
+            'index' => Pages\ListCustomerCategories::route('/'),
+            'create' => Pages\CreateCustomerCategory::route('/create'),
+            'edit' => Pages\EditCustomerCategory::route('/{record}/edit'),
         ];
     }
 }

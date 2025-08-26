@@ -43,9 +43,9 @@ class CustomerResource extends Resource
                             ->label('Nama')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Select::make('customer_type_id')
+                        Forms\Components\Select::make('customer_category_id')
                             ->label('Tipe Pelanggan')
-                            ->relationship('customerType', 'name')
+                            ->relationship('customerCategory', 'name')
                             ->searchable()
                             ->preload()
                             ->native(false)
@@ -100,7 +100,8 @@ class CustomerResource extends Resource
                         // Only render the tooltip if the column content exceeds the length limit.
                         return $state;
                     }),
-                Tables\Columns\TextColumn::make('customerType.name')
+                Tables\Columns\TextColumn::make('customerCategory.name')
+                    ->label('Kategori Pelanggan')
                     ->badge()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('phone')

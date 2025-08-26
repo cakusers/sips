@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->string('descriptions')->nullable();
-            $table->foreignId('customer_type_id')
+            $table->foreignId('customer_category_id')
                 ->nullable()
                 ->constrained()
                 ->cascadeOnDelete();

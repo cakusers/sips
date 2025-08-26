@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\CustomerCategory;
 use App\Models\CustomerType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class CustomerTypeSeeder extends Seeder
+class CustomerCategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -20,7 +21,7 @@ class CustomerTypeSeeder extends Seeder
         ];
 
         foreach ($names as $name) {
-            CustomerType::create([
+            CustomerCategory::create([
                 'name' => $name
             ]);
         }

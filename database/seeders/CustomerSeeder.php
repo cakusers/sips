@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Customer;
-use App\Models\CustomerType;
+use App\Models\CustomerCategory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -14,9 +14,9 @@ class CustomerSeeder extends Seeder
      */
     public function run(): void
     {
-        $perorangan = CustomerType::whereLike('name', 'perorangan')->first();
-        $pabrik = CustomerType::whereLike('name', 'pabrik')->first();
-        $pengepul = CustomerType::whereLike('name', '%pengepul%')->first();
+        $perorangan = CustomerCategory::whereLike('name', 'perorangan')->first();
+        $pabrik = CustomerCategory::whereLike('name', 'pabrik')->first();
+        $pengepul = CustomerCategory::whereLike('name', '%pengepul%')->first();
 
         $customers = [
             [
@@ -25,7 +25,7 @@ class CustomerSeeder extends Seeder
                 'email' => '',
                 'address' => 'Jl. Kediri Ke Dara',
                 'descriptions' => '',
-                'customer_type_id' => $perorangan->id
+                'customer_category_id' => $perorangan->id
             ],
             [
                 'name' => 'Rizfi Ferdiansyah',
@@ -33,7 +33,7 @@ class CustomerSeeder extends Seeder
                 'email' => 'wiwi@gmail.com',
                 'address' => 'Jl. Anomali sahur',
                 'descriptions' => '',
-                'customer_type_id' => $pabrik->id
+                'customer_category_id' => $pabrik->id
             ],
             [
                 'name' => 'Abram Widi Firmanto',
@@ -41,7 +41,7 @@ class CustomerSeeder extends Seeder
                 'email' => 'kan@gmail.com',
                 'address' => 'Jl. Anomali Lirili',
                 'descriptions' => '',
-                'customer_type_id' => $pengepul->id
+                'customer_category_id' => $pengepul->id
             ],
             [
                 'name' => 'Cakra Kusuma Erlangga Ramdani',
@@ -49,7 +49,7 @@ class CustomerSeeder extends Seeder
                 'email' => 'kan2@gmail.com',
                 'address' => 'Jl. Anomali Lirili',
                 'descriptions' => '',
-                'customer_type_id' => $perorangan->id
+                'customer_category_id' => $perorangan->id
             ],
         ];
 
@@ -60,7 +60,7 @@ class CustomerSeeder extends Seeder
                 'email' => $customer['email'],
                 'address' => $customer['address'],
                 'descriptions' => $customer['descriptions'],
-                'customer_type_id' => $customer['customer_type_id']
+                'customer_category_id' => $customer['customer_category_id']
             ]);
         }
     }
