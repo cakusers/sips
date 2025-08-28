@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CustomerCategory;
 use App\Models\Waste;
 use App\Models\WastePrice;
 use Carbon\Carbon;
@@ -20,30 +21,38 @@ class WastePriceSeeder extends Seeder
         $kaleng = Waste::where('name', 'Kaleng Aluminium')->first();
         $campuran = Waste::where('name', 'Campuran')->first();
 
+        $perorangan = CustomerCategory::whereLike('name', 'perorangan')->first();
+        $pabrik = CustomerCategory::whereLike('name', 'pabrik')->first();
+        $pengepul = CustomerCategory::whereLike('name', '%pengepul%')->first();
+
         $priceApril = Carbon::create(2025, 4, 1, 14, 0, 0);
         WastePrice::create([
             'waste_id' => $botolPet->id,
             'purchase_per_kg' => 1500,
             'selling_per_kg' => 2000,
-            'effective_start_date' => $priceApril
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
         ]);
         WastePrice::create([
             'waste_id' => $kardus->id,
             'purchase_per_kg' => 800,
             'selling_per_kg' => 1200,
-            'effective_start_date' => $priceApril
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
         ]);
         WastePrice::create([
             'waste_id' => $kaleng->id,
             'purchase_per_kg' => 7000,
             'selling_per_kg' => 9000,
-            'effective_start_date' => $priceApril
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
         ]);
         WastePrice::create([
             'waste_id' => $campuran->id,
             'purchase_per_kg' => 0,
             'selling_per_kg' => 0,
-            'effective_start_date' => $priceApril
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
         ]);
     }
 }

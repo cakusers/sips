@@ -8,6 +8,7 @@ use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationMan
 use App\Models\Waste;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -47,8 +48,8 @@ class WasteResource extends Resource
                     ])
                     ->schema([
                         Section::make()
-                            ->columnSpan([
-                                'lg' => 1
+                            ->columns([
+                                'lg' => 2
                             ])
                             ->schema([
                                 TextInput::make('name')
@@ -69,22 +70,61 @@ class WasteResource extends Resource
                                             ->required()
                                     ]),
                             ]),
-
                         Section::make()
-                            ->columnSpan([
-                                'lg' => 1
-                            ])
                             ->schema([
-                                TextInput::make('purchase_per_kg')
-                                    ->prefix('Rp')
-                                    ->label('Harga Beli per Kg')
-                                    ->required(),
-
-                                TextInput::make('selling_per_kg')
-                                    ->prefix('Rp')
-                                    ->label('Harga Jual per Kg')
-                                    ->required(),
+                                Repeater::make('wastePrices')
+                                    ->label('Harga Sampah yang Berlaku')
+                                    ->minItems(1)
+                                    ->addActionLabel('Tambahkan Harga Sampah')
+                                    ->columns([
+                                        'lg' => 3
+                                    ])
+                                    ->relationship()
+                                    ->schema([
+                                        Select::make('customer_category_id')
+                                            ->label('Kategori Pelanggan')
+                                            ->relationship('customerCategory', 'name')
+                                            ->required()
+                                            ->createOptionForm([
+                                                Section::make()
+                                                    ->columnSpan([
+                                                        'lg' => 1
+                                                    ])
+                                                    ->schema([
+                                                        TextInput::make('name')
+                                                            ->label('Nama')
+                                                            ->required()
+                                                            ->maxLength(255),
+                                                    ]),
+                                            ]),
+                                        TextInput::make('purchase_per_kg')
+                                            ->label('Harga beli per kg')
+                                            ->required()
+                                            ->prefix('Rp')
+                                            ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
+                                        TextInput::make('selling_per_kg')
+                                            ->label('Harga jual per kg')
+                                            ->required()
+                                            ->prefix('Rp')
+                                            ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
+                                    ])
                             ]),
+
+                        // Section::make()
+                        //     ->columnSpan([
+                        //         'lg' => 1
+                        //     ])
+                        //     ->schema([
+                        //         TextInput::make('purchase_per_kg')
+                        //             ->prefix('Rp')
+                        //             ->label('Harga Beli per Kg')
+                        //             ->required(),
+
+                        //         TextInput::make('selling_per_kg')
+                        //             ->prefix('Rp')
+                        //             ->label('Harga Jual per Kg')
+                        //             ->required(),
+                        //     ]),
 
                         Section::make()
                             ->columnSpan([
@@ -94,8 +134,9 @@ class WasteResource extends Resource
                             ->schema([
                                 TextInput::make('stock_in_kg')
                                     ->label('Stok Tersedia')
-                                    ->readOnly()
-                                    ->dehydrated(false)
+                                    ->disabled()
+                                    // ->readOnly()
+                                    // ->dehydrated(false)
                                     ->default(0)
                                     ->suffix('Kg')
                                     ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
@@ -137,18 +178,18 @@ class WasteResource extends Resource
                     ->toggleable()
                     ->label('Kategori')
                     ->sortable(),
-                TextColumn::make('latestPrice.purchase_per_kg')
-                    ->label('Harga Beli')
-                    ->toggleable()
-                    ->numeric()
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('latestPrice.selling_per_kg')
-                    ->label('Harga Jual')
-                    ->toggleable()
-                    ->numeric()
-                    ->sortable()
-                    ->searchable(),
+                // TextColumn::make('latestPrice.purchase_per_kg')
+                //     ->label('Harga Beli')
+                //     ->toggleable()
+                //     ->numeric()
+                //     ->sortable()
+                //     ->searchable(),
+                // TextColumn::make('latestPrice.selling_per_kg')
+                //     ->label('Harga Jual')
+                //     ->toggleable()
+                //     ->numeric()
+                //     ->sortable()
+                //     ->searchable(),
                 TextColumn::make('stock_in_kg')
                     ->label('Stok Tersedia')
                     ->toggleable()

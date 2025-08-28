@@ -12,11 +12,16 @@ class WastePrice extends Model
         'purchase_per_kg',
         'selling_per_kg',
         'waste_id',
-        'customer_type_id'
+        'customer_category_id'
     ];
 
     public function waste(): BelongsTo
     {
         return $this->belongsTo(Waste::class);
+    }
+
+    public function customerCategory(): BelongsTo
+    {
+        return $this->belongsTo(CustomerCategory::class);
     }
 }

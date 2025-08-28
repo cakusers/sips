@@ -15,4 +15,9 @@ class CustomerCategory extends Model
     {
         return $this->hasMany(Customer::class);
     }
+
+    public function waste_prices(): HasMany
+    {
+        return $this->hasMany(WastePrice::class);
+    }
 }
