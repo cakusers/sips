@@ -26,6 +26,9 @@ class WastePriceSeeder extends Seeder
         $pengepul = CustomerCategory::whereLike('name', '%pengepul%')->first();
 
         $priceApril = Carbon::create(2025, 4, 1, 14, 0, 0);
+        /**
+         * Botol PET
+         */
         WastePrice::create([
             'waste_id' => $botolPet->id,
             'purchase_per_kg' => 1500,
@@ -33,6 +36,17 @@ class WastePriceSeeder extends Seeder
             'effective_start_date' => $priceApril,
             'customer_category_id' => $perorangan->id
         ]);
+        WastePrice::create([
+            'waste_id' => $botolPet->id,
+            'purchase_per_kg' => 1000,
+            'selling_per_kg' => 1500,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
+        ]);
+
+        /**
+         *
+         */
         WastePrice::create([
             'waste_id' => $kardus->id,
             'purchase_per_kg' => 800,

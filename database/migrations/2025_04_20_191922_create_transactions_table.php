@@ -33,7 +33,14 @@ return new class extends Migration
             ])
                 ->default(PaymentStatus::UNPAID->value);
             $table->integer('total_price')->nullable();
-            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('customer_id')
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->foreignId('customer_category_id')
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete();
             $table->timestamps();
         });
     }

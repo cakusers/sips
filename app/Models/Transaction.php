@@ -18,7 +18,8 @@ class Transaction extends Model
         'total_price',
         'status',
         'payment_status',
-        'customer_id'
+        'customer_id',
+        'customer_category_id'
     ];
 
     protected $casts = [
@@ -37,8 +38,13 @@ class Transaction extends Model
         return $this->hasMany(TransactionWaste::class);
     }
 
-    public function stockMovements()
+    public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function customerCategory(): BelongsTo
+    {
+        return $this->belongsTo(CustomerCategory::class);
     }
 }

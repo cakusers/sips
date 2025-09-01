@@ -16,23 +16,22 @@ class CreateWaste extends CreateRecord
 
     protected ?bool $hasDatabaseTransactions = true;
 
-    protected function handleRecordCreation(array $data): Model
-    {
-        $waste = Waste::create([
-            'name' => $data['name'],
-            'img' => $data['img'],
-            'waste_category_id' => $data['waste_category_id'],
-            // 'min_stock_in_kg' => $data['min_stock_in_kg']
-        ]);
+    // protected function handleRecordCreation(array $data): Model
+    // {
+    //     $waste = Waste::create([
+    //         'name' => $data['name'],
+    //         'img' => $data['img'],
+    //         'waste_category_id' => $data['waste_category_id'],
+    //     ]);
 
-        WastePrice::create([
-            'waste_id' => $waste->id,
-            'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
-            'selling_per_kg' => $this->form->getState()['selling_per_kg'],
-        ]);
+    //     WastePrice::create([
+    //         'waste_id' => $waste->id,
+    //         'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
+    //         'selling_per_kg' => $this->form->getState()['selling_per_kg'],
+    //     ]);
 
-        return $waste;
-    }
+    //     return $waste;
+    // }
 
     protected function getRedirectUrl(): string
     {

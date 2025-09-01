@@ -85,6 +85,7 @@ class WasteResource extends Resource
                                             ->label('Kategori Pelanggan')
                                             ->relationship('customerCategory', 'name')
                                             ->required()
+                                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                             ->createOptionForm([
                                                 Section::make()
                                                     ->columnSpan([
@@ -109,22 +110,6 @@ class WasteResource extends Resource
                                             ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
                                     ])
                             ]),
-
-                        // Section::make()
-                        //     ->columnSpan([
-                        //         'lg' => 1
-                        //     ])
-                        //     ->schema([
-                        //         TextInput::make('purchase_per_kg')
-                        //             ->prefix('Rp')
-                        //             ->label('Harga Beli per Kg')
-                        //             ->required(),
-
-                        //         TextInput::make('selling_per_kg')
-                        //             ->prefix('Rp')
-                        //             ->label('Harga Jual per Kg')
-                        //             ->required(),
-                        //     ]),
 
                         Section::make()
                             ->columnSpan([

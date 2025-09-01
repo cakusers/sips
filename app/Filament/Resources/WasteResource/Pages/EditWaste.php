@@ -15,33 +15,33 @@ class EditWaste extends EditRecord
 
     protected ?bool $hasDatabaseTransactions = true;
 
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        // dd($data);
-        $current_price = WastePrice::query()->where('waste_id', $data['id'])->get()->last();
-        $data['purchase_per_kg'] = $current_price->purchase_per_kg;
-        $data['selling_per_kg'] = $current_price->selling_per_kg;
+    // protected function mutateFormDataBeforeFill(array $data): array
+    // {
+    //     // dd($data);
+    //     $current_price = WastePrice::query()->where('waste_id', $data['id'])->get()->last();
+    //     $data['purchase_per_kg'] = $current_price->purchase_per_kg;
+    //     $data['selling_per_kg'] = $current_price->selling_per_kg;
 
-        return $data;
-    }
+    //     return $data;
+    // }
 
-    protected function handleRecordUpdate(Model $record, array $data): Model
-    {
+    // protected function handleRecordUpdate(Model $record, array $data): Model
+    // {
 
-        // dd([$record, $data]);
-        $record->update($data);
+    //     // dd([$record, $data]);
+    //     $record->update($data);
 
-        WastePrice::create([
-            'waste_id' => $record->id,
-            'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
-            'selling_per_kg' => $this->form->getState()['selling_per_kg'],
-            // 'min_stock_in_kg' => $data['min_stock_in_kg']
-        ]);
+    //     WastePrice::create([
+    //         'waste_id' => $record->id,
+    //         'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
+    //         'selling_per_kg' => $this->form->getState()['selling_per_kg'],
+    //         // 'min_stock_in_kg' => $data['min_stock_in_kg']
+    //     ]);
 
-        $this->dispatch('refreshHistori');
+    //     $this->dispatch('refreshHistori');
 
-        return $record;
-    }
+    //     return $record;
+    // }
 
     protected function getHeaderActions(): array
     {

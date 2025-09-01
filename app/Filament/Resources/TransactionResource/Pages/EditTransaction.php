@@ -15,13 +15,6 @@ class EditTransaction extends EditRecord
 {
     protected static string $resource = TransactionResource::class;
 
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        $data['address'] = Customer::find($data['customer_id'])->address;
-
-        return $data;
-    }
-
     protected function getHeaderActions(): array
     {
         return [

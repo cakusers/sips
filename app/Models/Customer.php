@@ -15,7 +15,7 @@ class Customer extends Model
         'email',
         'address',
         'descriptions',
-        'customer_type_id'
+        'customer_category_id'
     ];
 
     public function transactions(): HasMany
