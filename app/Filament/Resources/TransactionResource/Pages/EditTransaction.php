@@ -32,6 +32,13 @@ class EditTransaction extends EditRecord
                 ->disabled()
                 ->color('gray'),
 
+            Actions\Action::make('print-invoice')
+                ->button()
+                ->label('Print Nota')
+                ->icon('heroicon-s-printer')
+                ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::COMPLETE && $record->payment_status === PaymentStatus::PAID)
+                ->url(fn(Transaction $record) => route('print-invoice', [$record->id])),
+
             Actions\Action::make('complete')
                 ->button()
                 ->label('Selesaikan Transaksi')

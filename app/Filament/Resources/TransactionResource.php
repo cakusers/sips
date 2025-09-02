@@ -153,6 +153,7 @@ class TransactionResource extends Resource
                             ->disabled(fn(Get $get) => $get('customer_id'))
                             ->live(onBlur: true)
                             ->dehydrated()
+                            ->disabled(fn(Get $get) => $get('status') !== 'Baru')
                             ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
                             ->createOptionForm([
                                 Forms\Components\Section::make()
@@ -551,6 +552,14 @@ class TransactionResource extends Resource
 
             ])
             ->actions([
+
+                Tables\Actions\Action::make('print-invoice')
+                    ->button()
+                    ->label('Print Nota')
+                    ->icon('heroicon-s-printer')
+                    ->visible(fn(Transaction $record): bool => $record->status === TransactionStatus::COMPLETE && $record->payment_status === PaymentStatus::PAID)
+                    ->url(fn(Transaction $record) => route('print-invoice', [$record->id])),
+
                 Tables\Actions\Action::make('complete')
                     ->button()
                     ->label('Selesaikan')
