@@ -2,26 +2,28 @@
 
 namespace App\Filament\Resources;
 
-use Livewire\Component as Livewire;
-use App\Filament\Resources\WasteResource\Pages;
-use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
-use App\Models\Waste;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\ViewAction;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
+use App\Models\Waste;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Livewire\Component as Livewire;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Repeater;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Filters\SelectFilter;
+use App\Filament\Resources\WasteResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
 
 class WasteResource extends Resource
 {
@@ -41,108 +43,110 @@ class WasteResource extends Resource
     {
         return $form
             ->schema([
-                Grid::make()
+                Section::make()
                     ->columns([
-                        'sm' => 1,
-                        'lg' => 2
+                        'lg' => 3
                     ])
                     ->schema([
-                        Section::make()
-                            ->columns([
-                                'lg' => 2
-                            ])
-                            ->schema([
+                        TextInput::make('name')
+                            ->label('Nama')
+                            ->required(),
+                        Select::make('waste_category_id')
+                            ->label('Kategori Sampah')
+                            ->relationship('category', 'name')
+                            ->preload()
+                            ->native(false)
+                            // ->optionsLimit(50)
+                            ->searchable()
+                            ->required()
+                            ->createOptionForm([
                                 TextInput::make('name')
-                                    ->label('Nama')
-                                    ->required(),
-
-                                Select::make('waste_category_id')
-                                    ->label('Kategori Sampah')
-                                    ->relationship('category', 'name')
-                                    ->preload()
-                                    ->native(false)
-                                    // ->optionsLimit(50)
-                                    ->searchable()
+                                    ->label('Kategori')
                                     ->required()
+                            ]),
+                        Radio::make('can_sorted')
+                            ->label('Bisa  Disortir?')
+                            ->required()
+                            ->inline()
+                            ->inlineLabel(false)
+                            ->options([
+                                true => 'Iya',
+                                false => 'Tidak',
+                            ]),
+                    ]),
+                Section::make()
+                    ->schema([
+                        Repeater::make('wastePrices')
+                            ->label('Harga Sampah yang Berlaku')
+                            ->minItems(1)
+                            ->addActionLabel('Tambahkan Harga Sampah')
+                            ->columns([
+                                'lg' => 3
+                            ])
+                            ->relationship()
+                            ->schema([
+                                Select::make('customer_category_id')
+                                    ->label('Kategori Pelanggan')
+                                    ->relationship('customerCategory', 'name')
+                                    ->required()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->createOptionForm([
-                                        TextInput::make('name')
-                                            ->label('Kategori')
-                                            ->required()
-                                    ]),
-                            ]),
-                        Section::make()
-                            ->schema([
-                                Repeater::make('wastePrices')
-                                    ->label('Harga Sampah yang Berlaku')
-                                    ->minItems(1)
-                                    ->addActionLabel('Tambahkan Harga Sampah')
-                                    ->columns([
-                                        'lg' => 3
-                                    ])
-                                    ->relationship()
-                                    ->schema([
-                                        Select::make('customer_category_id')
-                                            ->label('Kategori Pelanggan')
-                                            ->relationship('customerCategory', 'name')
-                                            ->required()
-                                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                            ->createOptionForm([
-                                                Section::make()
-                                                    ->columnSpan([
-                                                        'lg' => 1
-                                                    ])
-                                                    ->schema([
-                                                        TextInput::make('name')
-                                                            ->label('Nama')
-                                                            ->required()
-                                                            ->maxLength(255),
-                                                    ]),
+                                        Section::make()
+                                            ->columnSpan([
+                                                'lg' => 1
+                                            ])
+                                            ->schema([
+                                                TextInput::make('name')
+                                                    ->label('Nama')
+                                                    ->required()
+                                                    ->maxLength(255),
                                             ]),
-                                        TextInput::make('purchase_per_kg')
-                                            ->label('Harga beli per kg')
-                                            ->required()
-                                            ->prefix('Rp')
-                                            ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
-                                        TextInput::make('selling_per_kg')
-                                            ->label('Harga jual per kg')
-                                            ->required()
-                                            ->prefix('Rp')
-                                            ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
-                                    ])
-                            ]),
-
-                        Section::make()
-                            ->columnSpan([
-                                'lg' => 1
+                                    ]),
+                                TextInput::make('purchase_per_kg')
+                                    ->label('Harga beli per kg')
+                                    ->required()
+                                    ->prefix('Rp')
+                                    ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
+                                TextInput::make('selling_per_kg')
+                                    ->label('Harga jual per kg')
+                                    ->required()
+                                    ->prefix('Rp')
+                                    ->dehydrateStateUsing(fn($state) => str_replace('.', '', $state)),
                             ])
-                            ->hidden(fn($operation) => $operation === 'create')
-                            ->schema([
-                                TextInput::make('stock_in_kg')
-                                    ->label('Stok Tersedia')
-                                    ->disabled()
-                                    // ->readOnly()
-                                    // ->dehydrated(false)
-                                    ->default(0)
-                                    ->suffix('Kg')
-                                    ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
-                            ]),
+                    ]),
 
-                        Section::make()
-                            ->columnSpan(function ($operation) {
-                                if ($operation === 'create') {
-                                    return 2;
-                                }
-
-                                return 1;
-                            })
-                            ->schema([
-                                FileUpload::make('img')
-                                    ->label('Gambar Sampah')
-                                    ->image()
-                                    ->directory('sampah')
-                                    ->visibility('private'),
-                            ])
+                Section::make()
+                    ->columnSpan([
+                        'lg' => 1
                     ])
+                    ->hidden(fn($operation) => $operation === 'create')
+                    ->schema([
+                        TextInput::make('stock_in_kg')
+                            ->label('Stok Tersedia')
+                            ->disabled()
+                            // ->readOnly()
+                            // ->dehydrated(false)
+                            ->default(0)
+                            ->suffix('Kg')
+                            ->formatStateUsing(fn($state) => str_replace('.', ',', $state))
+                    ]),
+
+                Section::make()
+                    ->columnSpan(function ($operation) {
+                        if ($operation === 'create') {
+                            return 2;
+                        }
+
+                        return 1;
+                    })
+                    ->schema([
+                        FileUpload::make('img')
+                            ->label('Gambar Sampah')
+                            ->image()
+                            ->directory('sampah')
+                            ->visibility('private'),
+                    ])
+
             ]);
     }
 

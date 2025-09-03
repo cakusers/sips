@@ -16,10 +16,10 @@ class WastePriceSeeder extends Seeder
      */
     public function run(): void
     {
-        $botolPet = Waste::where('name', 'Botol PET Bening')->first();
+        $botolPet = Waste::where('name', 'Botol PET')->first();
         $kardus = Waste::where('name', 'Kardus Bekas')->first();
         $kaleng = Waste::where('name', 'Kaleng Aluminium')->first();
-        $campuran = Waste::where('name', 'Campuran')->first();
+        $botolktr = Waste::whereLike('name', '%kotor%')->first();
 
         $perorangan = CustomerCategory::whereLike('name', 'perorangan')->first();
         $pabrik = CustomerCategory::whereLike('name', 'pabrik')->first();
@@ -62,7 +62,7 @@ class WastePriceSeeder extends Seeder
             'customer_category_id' => $perorangan->id
         ]);
         WastePrice::create([
-            'waste_id' => $campuran->id,
+            'waste_id' => $botolktr->id,
             'purchase_per_kg' => 0,
             'selling_per_kg' => 0,
             'effective_start_date' => $priceApril,

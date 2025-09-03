@@ -91,7 +91,7 @@ class StockMovementResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal & Waktu')
-                    ->dateTime('j F o, H.i')
+                    ->dateTime('j M o, H.i')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('transaction.number')

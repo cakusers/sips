@@ -9,8 +9,8 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Enums\MovementType;
-use App\Enums\TransactionStatus;
 use App\Models\StockMovement;
+use App\Enums\TransactionStatus;
 use App\Models\TransactionWaste;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +21,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Illuminate\Contracts\Support\Htmlable;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\MixedWasteResource;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -33,7 +34,7 @@ class SortMixedWaste extends Page implements HasForms
 
     protected static string $resource = MixedWasteResource::class;
     protected static string $view = 'filament.resources.mixed-waste-resource.pages.sort-mixed-waste';
-    protected static ?string $title = 'Pilah Sampah Campuran';
+    // protected static ?string $title = 'Pilah Sampah';
     public function mount(int | string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -51,6 +52,14 @@ class SortMixedWaste extends Page implements HasForms
             );
         }
     }
+
+    public function getTitle(): string | Htmlable
+    {
+        return sprintf('Pilah Sampah %s', $this->record->waste->name);
+    }
+
+
+
 
     public ?array $data = [];
 
@@ -87,23 +96,23 @@ class SortMixedWaste extends Page implements HasForms
                         TextInput::make('transaction.number')
                             ->label('Nomer Transaksi')
                             ->disabled(),
-                        TextInput::make('is_sorted')
-                            ->label('Status Pemilahan')
-                            ->formatStateUsing(fn($state) => $state === 0 ? 'Belum dipilah' : 'Sudah Dipilah')
-                            ->disabled(),
-                        TextInput::make('transaction.customer.name')
-                            ->label('Pelanggan')
+                        DateTimePicker::make('created_at')
+                            ->label('Waktu Transaksi')
+                            ->native(false)
+                            ->displayFormat('j M Y, H.i')
+                            ->seconds(false)
                             ->disabled(),
                         TextInput::make('qty_in_kg')
                             ->label('Berat Awal')
                             ->suffix('Kg')
                             ->disabled(),
-                        DateTimePicker::make('created_at')
-                            ->label('Dilakukan pada')
-                            ->native(false)
-                            ->displayFormat('j F Y, H.i')
-                            ->seconds(false)
-                            ->disabled()
+                        TextInput::make('transaction.customer.name')
+                            ->label('Pelanggan')
+                            ->disabled(),
+                        TextInput::make('is_sorted')
+                            ->label('Status Pemilahan')
+                            ->formatStateUsing(fn($state) => $state === 0 ? 'Belum dipilah' : 'Sudah Dipilah')
+                            ->disabled(),
                     ]),
                 Section::make()
                     ->schema([
@@ -114,6 +123,7 @@ class SortMixedWaste extends Page implements HasForms
                             ->defaultItems(1)
                             ->required()
                             ->live()
+                            ->addActionLabel('Tambah Sampah Pilahan')
                             ->rules([
                                 fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     $totalQty = 0;

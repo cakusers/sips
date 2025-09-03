@@ -31,8 +31,8 @@ class MixedWasteResource extends Resource
 
     protected static ?string $model = TransactionWaste::class;
     // protected static bool $shouldRegisterNavigation = false;
-    public static ?string $label = 'Daftar Sampah Campuran';
-    public static ?string $navigationLabel = 'Sortir Sampah Campuran';
+    public static ?string $label = 'Sortir Sampah';
+    public static ?string $navigationLabel = 'Sortir Sampah';
     public static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
     protected static ?string $navigationGroup = 'Umum';
     public static ?int $navigationSort = 4;
@@ -58,33 +58,42 @@ class MixedWasteResource extends Resource
     {
         return $table
             ->modifyQueryUsing(fn(Builder $query) => $query->whereHas('waste', function ($query) {
-                $query->where('name', 'like', '%' . 'campuran' . '%');
+                $query->where('can_sorted', true);
             }))
             ->defaultSort('created_at', 'desc')
             ->recordUrl(fn(Model $record): string => self::getUrl('sort', ['record' => $record]))
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('Dilakukan pada')
-                    ->dateTime('j F o, H.i')
-                    ->sortable(),
+                    ->label('Waktu Transaksi')
+                    ->dateTime('j M o, H.i')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('transaction.number')
                     ->label('Nomer Transaksi')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('transaction.customer.name')
                     ->label('Pelanggan')
                     ->searchable()
-                    ->limit(15),
+                    ->limit(15)
+                    ->toggleable(),
+                TextColumn::make('waste.name')
+                    ->label('Sampah')
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('qty_in_kg')
+                    ->label('Berat (Kg)')
+                    ->alignCenter()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('is_sorted')
                     ->label('Status Pemilahan')
+                    ->toggleable()
                     ->alignCenter()
                     ->badge()
                     ->color(fn($state) => $state ? 'info' : 'amber')
                     ->formatStateUsing(fn($state) => $state ? 'Sudah Dipilah' : 'Belum Dipilah'),
-                TextColumn::make('qty_in_kg')
-                    ->label('Berat (Kg)')
-                    ->alignCenter()
-                    ->sortable(),
                 TextColumn::make('transaction.status')
                     ->label('Status Transaksi')
                     ->badge()
@@ -119,6 +128,11 @@ class MixedWasteResource extends Resource
                 SelectFilter::make('customer')
                     ->label('Pelanggan')
                     ->relationship('transaction.customer', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('waste.name')
+                    ->label('Sampah')
+                    ->relationship('waste', 'name')
                     ->searchable()
                     ->preload(),
                 Filter::make('created_at')

@@ -23,7 +23,7 @@ class TransactionSeederJuly extends Seeder
         $botol = Waste::find(1);
         $kardus = Waste::find(2);
         $kaleng = Waste::find(3);
-        $campuran = Waste::find(4);
+        $botolktr = Waste::find(4);
         $customer = Customer::all();
 
         /**
@@ -184,7 +184,7 @@ class TransactionSeederJuly extends Seeder
         ]);
 
         $tanggal = Carbon::create(2025, 7, 12);
-        $sampah = $campuran;
+        $sampah = $botolktr;
         $tipe = TransactionType::PURCHASE;
         $harga = 0;
         $qty = 10;

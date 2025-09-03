@@ -71,128 +71,163 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Informasi Transaksi')
+                Grid::make()
                     ->columns([
-                        'lg' => 4
+                        'lg' => 2
                     ])
                     ->schema([
-                        Forms\Components\Select::make('type')
-                            ->label('Tipe Transaksi')
-                            ->options(self::$transactionType)
-                            ->disabled(fn($operation) => $operation === 'edit')
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false)),
+                        Section::make('Informasi Transaksi')
+                            ->columns([
+                                'lg' => 2
+                            ])
+                            ->columnSpan([
+                                'lg' => 1
+                            ])
+                            ->schema([
+                                Forms\Components\Radio::make('type')
+                                    ->label('Tipe Transaksi')
+                                    ->disabled(fn($operation) => $operation === 'edit')
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
+                                    ->options(self::$transactionType),
+                                Forms\Components\Radio::make('payment_status')
+                                    ->label('Status Pembayaran')
+                                    ->required()
+                                    ->live()
+                                    ->default(PaymentStatus::UNPAID->value)
+                                    ->disabled(fn(Get $get) => $get('status') === 'Selesai')
+                                    ->options([
+                                        PaymentStatus::PAID->value => 'Lunas',
+                                        PaymentStatus::UNPAID->value => 'Belum Lunas'
+                                    ]),
+                                // Forms\Components\Select::make('type')
+                                //     ->label('Tipe Transaksi')
+                                //     ->options(self::$transactionType)
+                                //     ->disabled(fn($operation) => $operation === 'edit')
+                                //     ->required()
+                                //     ->live()
+                                //     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false)),
+                                // Select::make('payment_status')
+                                //     ->label('Status Pembayaran')
+                                //     ->required()
+                                //     ->live()
+                                //     ->default(PaymentStatus::UNPAID->value)
+                                //     ->disabled(fn(Get $get) => $get('status') === 'Selesai')
+                                //     ->options([
+                                //         PaymentStatus::PAID->value => 'Lunas',
+                                //         PaymentStatus::UNPAID->value => 'Belum Lunas'
+                                //     ]),
+                                Forms\Components\TextInput::make('status')
+                                    ->default(TransactionStatus::NEW->value)
+                                    ->dehydrated(false)
+                                    ->live()
+                                    ->hidden()
+                                    ->formatStateUsing(
+                                        fn($state): string => match ($state) {
+                                            TransactionStatus::NEW->value => 'Baru',
+                                            TransactionStatus::COMPLETE->value => 'Selesai',
+                                            TransactionStatus::DELIVERED->value => 'Dikirimkan',
+                                            TransactionStatus::CANCELED->value => 'Dibatalkan',
+                                            TransactionStatus::RETURNED->value => 'Dikembalikan',
+                                        }
+                                    )
+                            ]),
 
-                        Select::make('customer_id')
-                            ->label('Pelanggan')
-                            ->relationship('customer', 'name')
-                            ->placeholder('Pilih pelanggan')
-                            ->searchable()
-                            ->preload()
-                            ->live(onBlur: true)
-                            ->disabled(fn(Get $get) => $get('status') !== 'Baru')
-                            ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                $customer = Customer::find($state);
-                                // Set kategori Pelanggan
-                                if ($state) {
-                                    $set('customer_category_id', $customer->customer_category_id);
-                                } else {
-                                    $set('customer_category_id', '');
-                                }
+                        Section::make('Informasi Pelanggan')
+                            ->columns([
+                                'lg' => 2
+                            ])
+                            ->columnSpan([
+                                'lg' => 1
+                            ])
+                            ->schema([
+                                Select::make('customer_id')
+                                    ->label('Pelanggan')
+                                    ->relationship('customer', 'name')
+                                    ->placeholder('Pilih pelanggan')
+                                    ->searchable()
+                                    ->preload()
+                                    ->live(onBlur: true)
+                                    ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                        $customer = Customer::find($state);
+                                        // Set kategori Pelanggan
+                                        if ($state) {
+                                            $set('customer_category_id', $customer->customer_category_id);
+                                        } else {
+                                            $set('customer_category_id', '');
+                                        }
 
-                                // Set Harga sampah (jika menekan tombol ini di urutan akhir)
-                                self::updatePriceAndSubTotal($get, $set, false);
-                            })
-                            ->createOptionForm([Section::make()
-                                ->columns([
-                                    'lg' => 2
-                                ])
-                                ->schema([
-                                    Forms\Components\TextInput::make('name')
-                                        ->label('Nama')
-                                        ->required()
-                                        ->maxLength(255),
-                                    Forms\Components\Select::make('customer_category_id')
-                                        ->label('Tipe Pelanggan')
-                                        ->relationship('customerCategory', 'name')
-                                        ->searchable()
-                                        ->preload()
-                                        ->native(false)
-                                        ->createOptionForm([
-                                            Forms\Components\Section::make()
-                                                ->columnSpan([
-                                                    'lg' => 1
-                                                ])
-                                                ->schema([
-                                                    Forms\Components\TextInput::make('name')
-                                                        ->label('Nama')
-                                                        ->required()
-                                                        ->maxLength(255),
+                                        // Set Harga sampah (jika menekan tombol ini di urutan akhir)
+                                        self::updatePriceAndSubTotal($get, $set, false);
+                                    })
+                                    ->createOptionForm([Section::make()
+                                        ->columns([
+                                            'lg' => 2
+                                        ])
+                                        ->schema([
+                                            Forms\Components\TextInput::make('name')
+                                                ->label('Nama')
+                                                ->required()
+                                                ->maxLength(255),
+                                            Forms\Components\Select::make('customer_category_id')
+                                                ->label('Tipe Pelanggan')
+                                                ->relationship('customerCategory', 'name')
+                                                ->searchable()
+                                                ->preload()
+                                                ->native(false)
+                                                ->createOptionForm([
+                                                    Forms\Components\Section::make()
+                                                        ->columnSpan([
+                                                            'lg' => 1
+                                                        ])
+                                                        ->schema([
+                                                            Forms\Components\TextInput::make('name')
+                                                                ->label('Nama')
+                                                                ->required()
+                                                                ->maxLength(255),
+                                                        ]),
                                                 ]),
-                                        ]),
-                                    Forms\Components\TextInput::make('phone')
-                                        ->label('No. Telepon')
-                                        ->placeholder('081xxxxxxxxxx')
-                                        ->tel()
-                                        ->maxLength(20),
-                                    Forms\Components\TextInput::make('email')
-                                        ->email()
-                                        ->maxLength(255),
+                                            Forms\Components\TextInput::make('phone')
+                                                ->label('No. Telepon')
+                                                ->placeholder('081xxxxxxxxxx')
+                                                ->tel()
+                                                ->maxLength(20),
+                                            Forms\Components\TextInput::make('email')
+                                                ->email()
+                                                ->maxLength(255),
 
-                                    Forms\Components\TextInput::make('address')
-                                        ->label('Alamat')
-                                        ->columnSpanFull(),
-                                    Textarea::make('decription')
-                                        ->label('Catatan')
-                                        ->columnSpanFull(),
-                                ])]),
-                        Select::make('customer_category_id')
-                            ->label('Kategori Pelanggan')
-                            ->options(CustomerCategory::all()->pluck('name', 'id'))
-                            ->disabled(fn(Get $get) => $get('customer_id'))
-                            ->live(onBlur: true)
-                            ->dehydrated()
-                            ->disabled(fn(Get $get) => $get('status') !== 'Baru')
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
-                            ->createOptionForm([
-                                Forms\Components\Section::make()
-                                    ->columnSpan([
-                                        'lg' => 1
-                                    ])
-                                    ->schema([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nama')
-                                            ->required()
-                                            ->maxLength(255),
+                                            Forms\Components\TextInput::make('address')
+                                                ->label('Alamat')
+                                                ->columnSpanFull(),
+                                            Textarea::make('decription')
+                                                ->label('Catatan')
+                                                ->columnSpanFull(),
+                                        ])]),
+                                Select::make('customer_category_id')
+                                    ->label('Kategori Pelanggan')
+                                    ->options(CustomerCategory::all()->pluck('name', 'id'))
+                                    ->disabled(fn(Get $get) => $get('customer_id'))
+                                    ->live(onBlur: true)
+                                    ->dehydrated()
+                                    ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
+                                    ->createOptionForm([
+                                        Forms\Components\Section::make()
+                                            ->columnSpan([
+                                                'lg' => 1
+                                            ])
+                                            ->schema([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->label('Nama')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                            ]),
                                     ]),
                             ]),
-
-                        Select::make('payment_status')
-                            ->label('Status Pembayaran')
-                            ->required()
-                            ->live()
-                            ->default(PaymentStatus::UNPAID->value)
-                            ->disabled(fn(Get $get) => $get('status') === 'Selesai')
-                            ->options([
-                                PaymentStatus::PAID->value => 'Lunas',
-                                PaymentStatus::UNPAID->value => 'Belum Lunas'
-                            ]),
-                        Forms\Components\TextInput::make('status')
-                            ->default(TransactionStatus::NEW->value)
-                            ->dehydrated(false)
-                            ->live()
-                            ->hidden()
-                            ->formatStateUsing(
-                                fn($state): string => match ($state) {
-                                    TransactionStatus::NEW->value => 'Baru',
-                                    TransactionStatus::COMPLETE->value => 'Selesai',
-                                    TransactionStatus::DELIVERED->value => 'Dikirimkan',
-                                    TransactionStatus::CANCELED->value => 'Dibatalkan',
-                                    TransactionStatus::RETURNED->value => 'Dikembalikan',
-                                }
-                            )
                     ]),
+
 
                 Section::make('Detail Sampah')->schema([
                     Repeater::make('transactionWastes')
@@ -407,14 +442,15 @@ class TransactionResource extends Resource
 
                 ]),
 
-                Section::make()->schema([
-                    TextInput::make('total_price')
-                        ->label('Harga Total')
-                        ->prefix('Rp')->numeric()
-                        ->required()
-                        ->readOnly()
-                        ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
-                ])->columns(2),
+                Section::make()
+                    ->schema([
+                        TextInput::make('total_price')
+                            ->label('Harga Total')
+                            ->prefix('Rp')->numeric()
+                            ->required()
+                            ->readOnly()
+                            ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
+                    ]),
             ]);
     }
 
@@ -487,7 +523,7 @@ class TransactionResource extends Resource
                     ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dilakukan Pada')
-                    ->dateTime('j F o, H.i')
+                    ->dateTime('j M o, H.i')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('updated_at')

@@ -15,6 +15,7 @@ class Waste extends Model
         'img',
         'stock_in_kg',
         'min_stock_in_kg',
+        'can_sorted',
         'waste_category_id'
     ];
 
