@@ -2,10 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\UserRole;
+use Illuminate\Support\Facades\Auth;
+use App\Filament\Widgets\Sales\RevenueChart;
+use App\Filament\Widgets\Sales\PurchaseChart;
 use App\Filament\Widgets\Sales\FinanceOverview;
 use App\Filament\Widgets\Sales\GrossProfitChart;
-use App\Filament\Widgets\Sales\PurchaseChart;
-use App\Filament\Widgets\Sales\RevenueChart;
 
 class SalesDashboard extends \Filament\Pages\Dashboard
 {
@@ -14,6 +16,10 @@ class SalesDashboard extends \Filament\Pages\Dashboard
     protected static ?string $navigationLabel = 'Penjualan';
     protected static ?string $navigationGroup = 'Dashboard';
     protected static ?int $navigationSort = 1;
+    public static function canAccess(): bool
+    {
+        return Auth::user()->role === UserRole::OWNER || Auth::user()->role === UserRole::ADMIN;
+    }
 
     public function getWidgets(): array
     {

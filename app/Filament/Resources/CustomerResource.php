@@ -2,18 +2,20 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CustomerResource\Pages;
-use App\Models\Customer;
 use Filament\Forms;
+use Filament\Tables;
+use App\Enums\UserRole;
+use App\Models\Customer;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\ViewAction;
-use Filament\Tables\Table;
+use Filament\Tables\Actions\DeleteAction;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\CustomerResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CustomerResource extends Resource
@@ -29,6 +31,11 @@ class CustomerResource extends Resource
     protected static ?string $navigationGroup = 'Data Master';
 
     protected static ?int $navigationSort = 8;
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role === UserRole::OWNER || Auth::user()->role === UserRole::ADMIN;
+    }
 
     public static function form(Form $form): Form
     {

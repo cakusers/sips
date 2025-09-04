@@ -3,11 +3,11 @@
 namespace App\Filament\Resources;
 
 use Closure;
-use Dom\Text;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Waste;
+use App\Enums\UserRole;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use App\Models\Customer;
@@ -22,6 +22,7 @@ use App\Models\CustomerCategory;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Filters\Filter;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\Alignment;
 use Filament\Forms\Components\Section;
@@ -29,7 +30,6 @@ use Filament\Tables\Filters\Indicator;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
@@ -48,6 +48,10 @@ class TransactionResource extends Resource
     protected static ?string $label = 'Data Transaksi';
     protected static ?string $navigationGroup = 'Umum';
     protected static ?int $navigationSort = 3;
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role === UserRole::OWNER || Auth::user()->role === UserRole::ADMIN;
+    }
 
     protected static array $transactionType = [
         TransactionType::PURCHASE->value => 'Beli',

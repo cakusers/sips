@@ -21,7 +21,8 @@ return new class extends Migration
             $table->rememberToken();
             $table->enum('role', [
                 UserRole::OWNER->value,
-                UserRole::ADMIN->value
+                UserRole::ADMIN->value,
+                UserRole::SORTER->value,
             ])->default(UserRole::ADMIN->value);
             $table->timestamps();
         });

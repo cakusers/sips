@@ -18,7 +18,19 @@ class UserSeeder extends Seeder
         DB::table('users')->insert([
             'name' => 'owner',
             'role' => UserRole::OWNER,
+            'email' => 'owner@gmail.com',
+            'password' => Hash::make('12345678')
+        ]);
+        DB::table('users')->insert([
+            'name' => 'admin',
+            'role' => UserRole::ADMIN,
             'email' => 'admin@gmail.com',
+            'password' => Hash::make('12345678')
+        ]);
+        DB::table('users')->insert([
+            'name' => 'sorter',
+            'role' => UserRole::SORTER,
+            'email' => 'sorter@gmail.com',
             'password' => Hash::make('12345678')
         ]);
     }

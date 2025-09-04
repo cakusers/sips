@@ -2,16 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CustomerCategoryResource\Pages;
-use App\Filament\Resources\CustomerCategoryResource\RelationManagers;
-use App\Models\CustomerCategory;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Enums\UserRole;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\CustomerCategory;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\CustomerCategoryResource\Pages;
+use App\Filament\Resources\CustomerCategoryResource\RelationManagers;
 
 class CustomerCategoryResource extends Resource
 {
@@ -20,6 +22,10 @@ class CustomerCategoryResource extends Resource
     protected static ?string $navigationGroup = 'Data Master';
     protected static ?int $navigationSort = 9;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role === UserRole::OWNER || Auth::user()->role === UserRole::ADMIN;
+    }
 
     public static function form(Form $form): Form
     {

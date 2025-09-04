@@ -158,6 +158,7 @@ class SortMixedWaste extends Page implements HasForms
                                         'distinct' => 'Jenis sampah yang sama sudah dipilih. Silakan pilih yang lain.',
                                     ])
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->searchable()
                                     ->options(
                                         Waste::query()->where('name', 'not like', '%' . 'campuran' . '%')->pluck('name', 'id')
                                     ),

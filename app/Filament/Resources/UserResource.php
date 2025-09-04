@@ -27,7 +27,6 @@ class UserResource extends Resource
         return Auth::user()->role === UserRole::OWNER;
     }
 
-
     public static function form(Form $form): Form
     {
         return $form
@@ -54,7 +53,8 @@ class UserResource extends Resource
                         Forms\Components\Select::make('role')
                             ->options([
                                 UserRole::ADMIN->value => 'Admin',
-                                UserRole::OWNER->value => 'Pemilik'
+                                UserRole::OWNER->value => 'Pemilik',
+                                UserRole::SORTER->value => 'Penyortir'
                             ])
                             ->required(),
                     ])
@@ -72,7 +72,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('role')
                     ->formatStateUsing(fn($state): string => match ($state) {
                         UserRole::ADMIN => 'admin',
-                        UserRole::OWNER => 'pemilik'
+                        UserRole::OWNER => 'pemilik',
+                        UserRole::SORTER => 'penyortir'
                     })
                     ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
