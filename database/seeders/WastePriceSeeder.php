@@ -45,15 +45,26 @@ class WastePriceSeeder extends Seeder
         ]);
 
         /**
-         *
+         *  Kardus
          */
+        WastePrice::create([
+            'waste_id' => $kardus->id,
+            'purchase_per_kg' => 1300,
+            'selling_per_kg' => 1700,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
+        ]);
         WastePrice::create([
             'waste_id' => $kardus->id,
             'purchase_per_kg' => 800,
             'selling_per_kg' => 1200,
             'effective_start_date' => $priceApril,
-            'customer_category_id' => $perorangan->id
+            'customer_category_id' => $pengepul->id
         ]);
+
+        /**
+         * Kaleng
+         */
         WastePrice::create([
             'waste_id' => $kaleng->id,
             'purchase_per_kg' => 7000,
@@ -61,6 +72,10 @@ class WastePriceSeeder extends Seeder
             'effective_start_date' => $priceApril,
             'customer_category_id' => $perorangan->id
         ]);
+
+        /**
+         * Kaleng
+         */
         WastePrice::create([
             'waste_id' => $botolktr->id,
             'purchase_per_kg' => 0,

@@ -117,45 +117,45 @@ class DecarbonizationOutChart extends ApexChartWidget
      */
     protected function getFormSchema(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            return [
-                Select::make('period')
-                    ->label('Periode')
-                    ->options([
-                        'weekly' => 'Mingguan',
-                        'monthly' => 'Bulanan',
-                        'yearly' => 'Tahunan'
-                    ])
-                    ->default('weekly')
-                    ->native(false)
-                    ->live(),
-                /**
-                 * Tampilkan ketika period mingguan
-                 */
-                Select::make('month')
-                    ->label('Bulan')
-                    ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
-                    ->default(Carbon::now()->month)
-                    ->visible(fn(Get $get) => $get('period') === 'weekly')
-                    ->native(false)
-                    ->live(),
-                /**
-                 * Tampilkan ketika period mingguan dan bulanan
-                 */
-                Select::make('year')
-                    ->label('Tahun')
-                    ->options($this->getAvailableYear())
-                    ->afterStateUpdated(fn(Set $set, $state) => !$state ? $set('month', null) : $state)
-                    ->default(Carbon::now()->year)
-                    ->hidden(fn(Get $get) => $get('period') === 'yearly')
-                    ->native(false)
-                    ->live(),
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        return [
+            Select::make('period')
+                ->label('Periode')
+                ->options([
+                    'weekly' => 'Mingguan',
+                    'monthly' => 'Bulanan',
+                    'yearly' => 'Tahunan'
+                ])
+                ->default('weekly')
+                ->native(false)
+                ->live(),
+            /**
+             * Tampilkan ketika period mingguan
+             */
+            Select::make('month')
+                ->label('Bulan')
+                ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                ->default(Carbon::now()->month)
+                ->visible(fn(Get $get) => $get('period') === 'weekly')
+                ->native(false)
+                ->live(),
+            /**
+             * Tampilkan ketika period mingguan dan bulanan
+             */
+            Select::make('year')
+                ->label('Tahun')
+                ->options($this->getAvailableYear())
+                ->afterStateUpdated(fn(Set $set, $state) => !$state ? $set('month', null) : $state)
+                ->default(Carbon::now()->year)
+                ->hidden(fn(Get $get) => $get('period') === 'yearly')
+                ->native(false)
+                ->live(),
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     /**
@@ -300,65 +300,65 @@ class DecarbonizationOutChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            $period = $this->filterFormData['period'];
-            $data = $this->getChartData($period);
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        $period = $this->filterFormData['period'];
+        $data = $this->getChartData($period);
 
-            return [
-                'chart' => [
-                    'type' => 'area',
-                    'height' => 300,
-                    'toolbar' => ['show' => false]
+        return [
+            'chart' => [
+                'type' => 'area',
+                'height' => 300,
+                'toolbar' => ['show' => false]
+            ],
+            'series' => [
+                [
+                    'name' => 'Dekarbonisasi Keluar',
+                    'data' => $data->values()->toArray(),
                 ],
-                'series' => [
-                    [
-                        'name' => 'Dekarbonisasi Keluar',
-                        'data' => $data->values()->toArray(),
+            ],
+            'xaxis' => [
+                'categories' => $data->keys()->toArray(),
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
                     ],
                 ],
-                'xaxis' => [
-                    'categories' => $data->keys()->toArray(),
-                    'labels' => [
-                        'style' => [
-                            'fontFamily' => 'inherit',
-                        ],
+                'title' => [
+                    'text' => 'Periode'
+                ]
+            ],
+            'yaxis' => [
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
                     ],
-                    'title' => [
-                        'text' => 'Periode'
-                    ]
                 ],
-                'yaxis' => [
-                    'labels' => [
-                        'style' => [
-                            'fontFamily' => 'inherit',
-                        ],
-                    ],
-                    'title' => [
-                        'text' => 'Dekarbonisasi'
-                    ]
-                ],
-                'colors' => ['#f97316'],
-                'stroke' => [
-                    'curve' => 'smooth',
-                ],
-                'dataLabels' => [
-                    'enabled' => false,
-                ],
-                // 'plotOptions' => [
-                //     'pie' => [
-                //         'donut' => [
-                //             'labels' => [
-                //                 'show' => true
-                //             ]
-                //         ]
-                //     ]
-                // ]
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+                'title' => [
+                    'text' => 'Dekarbonisasi'
+                ]
+            ],
+            'colors' => ['#f97316'],
+            'stroke' => [
+                'curve' => 'smooth',
+            ],
+            'dataLabels' => [
+                'enabled' => false,
+            ],
+            // 'plotOptions' => [
+            //     'pie' => [
+            //         'donut' => [
+            //             'labels' => [
+            //                 'show' => true
+            //             ]
+            //         ]
+            //     ]
+            // ]
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     protected function extraJsOptions(): ?RawJs

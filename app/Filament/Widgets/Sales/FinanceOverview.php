@@ -19,10 +19,10 @@ class FinanceOverview extends BaseWidget
      */
     protected function getStats(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
 
-        try {
+        // try {
             // Periode waktu untuk bulan ini dan bulan lalu
             $currentMonthStart = Carbon::now()->startOfMonth();
             $currentMonthEnd = Carbon::now()->endOfMonth();
@@ -46,11 +46,11 @@ class FinanceOverview extends BaseWidget
                 $this->createStatCard('Pendapatan Bulan Ini', $currentMonthRevenue, $previousMonthRevenue),
                 $this->createStatCard('Pembelian Bulan Ini', $currentMonthPurchases, $previousMonthPurchases),
             ];
-        } finally {
-            // --- PENTING: Selalu reset waktu setelah selesai ---
-            // Ini akan mengembalikan Carbon::now() ke waktu sebenarnya.
-            Carbon::setTestNow();
-        }
+        // } finally {
+        //     // --- PENTING: Selalu reset waktu setelah selesai ---
+        //     // Ini akan mengembalikan Carbon::now() ke waktu sebenarnya.
+        //     Carbon::setTestNow();
+        // }
     }
 
     /**

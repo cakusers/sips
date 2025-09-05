@@ -88,31 +88,31 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
      */
     protected function getFormSchema(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            return [
-                Checkbox::make('allTimeIn')
-                    ->label('Sepanjang Waktu')
-                    ->live(),
-                Select::make('month')
-                    ->label('Bulan')
-                    ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
-                    ->default(Carbon::now()->month)
-                    ->hidden(fn(Get $get) => $get('allTimeIn'))
-                    ->native(false)
-                    ->live(),
-                Select::make('year')
-                    ->label('Tahun')
-                    ->options($this->getAvailableYear())
-                    ->default(Carbon::now()->year)
-                    ->hidden(fn(Get $get) => $get('allTimeIn'))
-                    ->native(false)
-                    ->live(),
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        return [
+            Checkbox::make('allTimeIn')
+                ->label('Sepanjang Waktu')
+                ->live(),
+            Select::make('month')
+                ->label('Bulan')
+                ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                ->default(Carbon::now()->month)
+                ->hidden(fn(Get $get) => $get('allTimeIn'))
+                ->native(false)
+                ->live(),
+            Select::make('year')
+                ->label('Tahun')
+                ->options($this->getAvailableYear())
+                ->default(Carbon::now()->year)
+                ->hidden(fn(Get $get) => $get('allTimeIn'))
+                ->native(false)
+                ->live(),
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     /**
@@ -174,39 +174,39 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            // dd($this->getAvailableMonth(2025));
-            $month = $this->filterFormData['month'];
-            $year = $this->filterFormData['year'];
-            $allTimeIn = $this->filterFormData['allTimeIn'];
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        // dd($this->getAvailableMonth(2025));
+        $month = $this->filterFormData['month'];
+        $year = $this->filterFormData['year'];
+        $allTimeIn = $this->filterFormData['allTimeIn'];
 
-            $data = $this->getDecarbonizationIn($month, $year, $allTimeIn);
+        $data = $this->getDecarbonizationIn($month, $year, $allTimeIn);
 
-            return [
-                'chart' => [
-                    'type' => 'donut',
-                    'height' => 300,
+        return [
+            'chart' => [
+                'type' => 'donut',
+                'height' => 300,
+            ],
+            'series' => $data->values(),
+            'labels' => $data->keys(),
+            'legend' => [
+                'labels' => [
+                    'fontFamily' => 'inherit',
                 ],
-                'series' => $data->values(),
-                'labels' => $data->keys(),
-                'legend' => [
-                    'labels' => [
-                        'fontFamily' => 'inherit',
-                    ],
-                ],
-                'plotOptions' => [
-                    'pie' => [
-                        'donut' =>  [
-                            'size' => '35%'
-                        ]
+            ],
+            'plotOptions' => [
+                'pie' => [
+                    'donut' =>  [
+                        'size' => '35%'
                     ]
                 ]
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+            ]
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     protected function extraJsOptions(): ?RawJs

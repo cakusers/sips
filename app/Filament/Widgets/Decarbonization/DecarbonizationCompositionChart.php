@@ -38,35 +38,35 @@ class DecarbonizationCompositionChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            $data = $this->getDecarbonizationByCategory();
-            // dd($data);
-            return [
-                'chart' => [
-                    'type' => 'donut',
-                    'height' => 300,
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        $data = $this->getDecarbonizationByCategory();
+        // dd($data);
+        return [
+            'chart' => [
+                'type' => 'donut',
+                'height' => 300,
+            ],
+            'series' => $data->values(),
+            'labels' => $data->keys(),
+            'legend' => [
+                'labels' => [
+                    'fontFamily' => 'inherit',
                 ],
-                'series' => $data->values(),
-                'labels' => $data->keys(),
-                'legend' => [
-                    'labels' => [
-                        'fontFamily' => 'inherit',
-                    ],
-                ],
-                'plotOptions' => [
-                    'pie' => [
-                        'donut' =>  [
-                            'size' => '35%'
-                        ]
+            ],
+            'plotOptions' => [
+                'pie' => [
+                    'donut' =>  [
+                        'size' => '35%'
                     ]
-
                 ]
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+
+            ]
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     protected function extraJsOptions(): ?RawJs

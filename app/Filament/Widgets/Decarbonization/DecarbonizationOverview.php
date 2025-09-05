@@ -14,32 +14,32 @@ class DecarbonizationOverview extends BaseWidget
 {
     protected function getStats(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            // Waktu
-            $currentMonth = Carbon::now()->month;
-            $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        // Waktu
+        $currentMonth = Carbon::now()->month;
+        $lastMonth = Carbon::now()->subMonthNoOverflow()->month;
 
-            // Jejak karbon masuk
-            $currentMonthCarbonIn = $this->getDecarbonizationIn($currentMonth);
-            $lastMonthCarbonIn = $this->getDecarbonizationIn($lastMonth);
+        // Jejak karbon masuk
+        $currentMonthCarbonIn = $this->getDecarbonizationIn($currentMonth);
+        $lastMonthCarbonIn = $this->getDecarbonizationIn($lastMonth);
 
-            // Jejak karbon keluar
-            $currentMonthCarbonOut = $this->getDecarbonizationOut($currentMonth);
-            $lastMonthCarbonOut = $this->getDecarbonizationOut($lastMonth);
+        // Jejak karbon keluar
+        $currentMonthCarbonOut = $this->getDecarbonizationOut($currentMonth);
+        $lastMonthCarbonOut = $this->getDecarbonizationOut($lastMonth);
 
-            $currentMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($currentMonth);
-            $lastMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($lastMonth);
+        $currentMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($currentMonth);
+        $lastMonthAvgCarbonOut = $this->getAvgCarbonFootprintOut($lastMonth);
 
-            return [
-                $this->createStatCard('Dekarbonisasi Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
-                $this->createStatCard('Dekarbonisasi Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
-                $this->createStatCard('Rata-Rata Dekarbonisasi Keluar Bulan Ini', $currentMonthAvgCarbonOut, $lastMonthAvgCarbonOut, app(NumberService::class)),
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+        return [
+            $this->createStatCard('Dekarbonisasi Masuk Bulan Ini', $currentMonthCarbonIn, $lastMonthCarbonIn, app(NumberService::class)),
+            $this->createStatCard('Dekarbonisasi Keluar Bulan Ini', $currentMonthCarbonOut, $lastMonthCarbonOut, app(NumberService::class)),
+            $this->createStatCard('Rata-Rata Dekarbonisasi Keluar Bulan Ini', $currentMonthAvgCarbonOut, $lastMonthAvgCarbonOut, app(NumberService::class)),
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     protected function createStatCard(string $label, float $currentValue, float $previousValue, NumberService $numberService): Stat

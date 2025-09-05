@@ -20,33 +20,33 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
     protected static ?string $chartId = 'DecarbonizationOutCompositionChart';
     protected function getHeading(): null|string|Htmlable|View
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            $filterMonth = $this->filterFormData['month'];
-            $year = $this->filterFormData['year'];
-            $allTimeOut = $this->filterFormData['allTimeOut'];
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        $filterMonth = $this->filterFormData['month'];
+        $year = $this->filterFormData['year'];
+        $allTimeOut = $this->filterFormData['allTimeOut'];
 
-            if (!$filterMonth) {
-                $monthName = '';
-            } else {
-                $monthName = Carbon::create()->month((int) $filterMonth)
-                    ->locale('id')
-                    ->translatedFormat('M');
-            }
-
-            if ($allTimeOut) {
-                return 'Komposisi Dekarbonisasi Keluar Sepanjang Waktu';
-            }
-
-            if (!$monthName || !$year) {
-                return 'Komposisi Dekarbonisasi Keluar (Periode Invalid)';
-            }
-
-            return sprintf('Komposisi Dekarboinsasi Keluar %s %s', $monthName, $year);
-        } finally {
-            Carbon::setTestNow();
+        if (!$filterMonth) {
+            $monthName = '';
+        } else {
+            $monthName = Carbon::create()->month((int) $filterMonth)
+                ->locale('id')
+                ->translatedFormat('M');
         }
+
+        if ($allTimeOut) {
+            return 'Komposisi Dekarbonisasi Keluar Sepanjang Waktu';
+        }
+
+        if (!$monthName || !$year) {
+            return 'Komposisi Dekarbonisasi Keluar (Periode Invalid)';
+        }
+
+        return sprintf('Komposisi Dekarboinsasi Keluar %s %s', $monthName, $year);
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     /**
@@ -181,38 +181,38 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            $month = $this->filterFormData['month'];
-            $year = $this->filterFormData['year'];
-            $allTimeOut = $this->filterFormData['allTimeOut'];
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        $month = $this->filterFormData['month'];
+        $year = $this->filterFormData['year'];
+        $allTimeOut = $this->filterFormData['allTimeOut'];
 
-            $data = $this->getDecarbonizationOut($month, $year, $allTimeOut);
+        $data = $this->getDecarbonizationOut($month, $year, $allTimeOut);
 
-            return [
-                'chart' => [
-                    'type' => 'donut',
-                    'height' => 300,
+        return [
+            'chart' => [
+                'type' => 'donut',
+                'height' => 300,
+            ],
+            'series' => $data->values(),
+            'labels' => $data->keys(),
+            'legend' => [
+                'labels' => [
+                    'fontFamily' => 'inherit',
                 ],
-                'series' => $data->values(),
-                'labels' => $data->keys(),
-                'legend' => [
-                    'labels' => [
-                        'fontFamily' => 'inherit',
-                    ],
-                ],
-                'plotOptions' => [
-                    'pie' => [
-                        'donut' =>  [
-                            'size' => '35%'
-                        ]
+            ],
+            'plotOptions' => [
+                'pie' => [
+                    'donut' =>  [
+                        'size' => '35%'
                     ]
                 ]
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+            ]
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     protected function extraJsOptions(): ?RawJs
