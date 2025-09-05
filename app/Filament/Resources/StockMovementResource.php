@@ -46,9 +46,9 @@ class StockMovementResource extends Resource
                     Forms\Components\Select::make('waste_id')
                         ->relationship('waste', 'name')
                         ->label('Sampah'),
-                    Forms\Components\Select::make('transaction_id')
-                        ->relationship('transaction', 'id')
-                        ->label('ID Transaksi'),
+                    Forms\Components\Select::make('transaction.number')
+                        ->relationship('transaction', 'number')
+                        ->label('Nomer Transaksi'),
                 ])
                     ->columns(2),
                 Forms\Components\Section::make()->schema([

@@ -212,11 +212,10 @@ class TransactionResource extends Resource
                                 Select::make('customer_category_id')
                                     ->label('Kategori Pelanggan')
                                     ->options(CustomerCategory::all()->pluck('name', 'id'))
-                                    ->disabled(fn(Get $get) => $get('customer_id'))
                                     ->live(onBlur: true)
-                                    ->dehydrated()
                                     ->disabled(fn(Get $get) => $get('customer_id') || $get('status') !== 'Baru')
                                     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
+                                    ->dehydrated(true)
                                     ->createOptionForm([
                                         Forms\Components\Section::make()
                                             ->columnSpan([

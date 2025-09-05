@@ -28,16 +28,7 @@
             border-bottom: 1px dashed black;
         }
 
-        .identifier :nth-child(1) {
-            float: left;
-        }
-
-        .identifier :nth-child(2) {
-            text-align: right;
-        }
-
         table {
-            /* table-layout: fixed; */
             width: 100%;
         }
 
@@ -52,8 +43,19 @@
         <p>CANDI - KAB SIDOARJO</p>
         <p>Jl. Raya Sepande No. 72,<br> Kec Candi, Kab. Sidoarjo, 61271</p>
         <div class="identifier">
-            <p>{{ now()->format('d.m.Y-H:i') }}</p>
-            <p>{{ str_replace('TRX', 'INV', $transaction->number) }}</p>
+            <table>
+                <tr>
+                    <td>
+                        {{ now()->format('d.m.Y-H:i') }}
+                    </td>
+                    <td style="text-align: center">
+                        {{ $transaction->type === 'purchase' ? 'Pembelian' : 'Penjualan' }}
+                    </td>
+                    <td style="text-align: right">
+                        {{ str_replace('TRX', 'INV', $transaction->number) }}
+                    </td>
+                </tr>
+            </table>
         </div>
     </header>
     <div class="content">
