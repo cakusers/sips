@@ -215,7 +215,7 @@ class TransactionResource extends Resource
                                     ->disabled(fn(Get $get) => $get('customer_id'))
                                     ->live(onBlur: true)
                                     ->dehydrated()
-                                    ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                                    ->disabled(fn(Get $get) => $get('customer_id') || $get('status') !== 'Baru')
                                     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
                                     ->createOptionForm([
                                         Forms\Components\Section::make()
