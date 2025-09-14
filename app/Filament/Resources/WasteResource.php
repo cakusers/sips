@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserRole;
 use Filament\Tables;
 use App\Models\Waste;
 use Filament\Forms\Form;
@@ -24,6 +25,7 @@ use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\WasteResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
+use Illuminate\Support\Facades\Auth;
 
 class WasteResource extends Resource
 {
@@ -75,6 +77,7 @@ class WasteResource extends Resource
                             ]),
                     ]),
                 Section::make()
+                    ->hidden(fn() => Auth::user()->role === UserRole::SORTER)
                     ->schema([
                         Repeater::make('wastePrices')
                             ->label('Harga Sampah yang Berlaku')
@@ -167,18 +170,6 @@ class WasteResource extends Resource
                     ->toggleable()
                     ->label('Kategori')
                     ->sortable(),
-                // TextColumn::make('latestPrice.purchase_per_kg')
-                //     ->label('Harga Beli')
-                //     ->toggleable()
-                //     ->numeric()
-                //     ->sortable()
-                //     ->searchable(),
-                // TextColumn::make('latestPrice.selling_per_kg')
-                //     ->label('Harga Jual')
-                //     ->toggleable()
-                //     ->numeric()
-                //     ->sortable()
-                //     ->searchable(),
                 TextColumn::make('stock_in_kg')
                     ->label('Stok Tersedia')
                     ->toggleable()

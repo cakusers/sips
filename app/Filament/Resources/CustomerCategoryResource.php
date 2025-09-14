@@ -18,7 +18,7 @@ use App\Filament\Resources\CustomerCategoryResource\RelationManagers;
 class CustomerCategoryResource extends Resource
 {
     protected static ?string $model = CustomerCategory::class;
-    protected static ?string $label = 'Data Tipe Pelanggan';
+    protected static ?string $label = 'Data Kategori Pelanggan';
     protected static ?string $navigationGroup = 'Data Master';
     protected static ?int $navigationSort = 9;
     protected static ?string $navigationIcon = 'heroicon-o-tag';

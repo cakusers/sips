@@ -12,9 +12,10 @@ use App\Filament\Widgets\Sales\GrossProfitChart;
 class SalesDashboard extends \Filament\Pages\Dashboard
 {
     protected static string $routePath = 'sales';
-    protected static ?string $title = 'Dashboard Penjualan';
-    protected static ?string $navigationLabel = 'Penjualan';
+    protected static ?string $title = 'Transaksi';
+    protected static ?string $navigationLabel = 'Transaksi';
     protected static ?string $navigationGroup = 'Dashboard';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?int $navigationSort = 1;
     public static function canAccess(): bool
     {
