@@ -15,6 +15,17 @@ class EditTransaction extends EditRecord
 {
     protected static string $resource = TransactionResource::class;
 
+    public $isFormDisabled = false;
+
+    public function mount($record): void
+    {
+        parent::mount($record);
+        $transaction = $this->getRecord();
+        if ($transaction->status === TransactionStatus::COMPLETE || $transaction->status === TransactionStatus::CANCELED || $transaction->status === TransactionStatus::RETURNED) {
+            $this->isFormDisabled = true;
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -26,11 +37,18 @@ class EditTransaction extends EditRecord
                     TransactionStatus::CANCELED => 'Dibatalkan',
                     TransactionStatus::RETURNED => 'Dikembalikan',
                 })
+                ->color(fn($record): string => match ($record->status) {
+                    TransactionStatus::NEW => 'info',
+                    TransactionStatus::COMPLETE => 'success',
+                    TransactionStatus::DELIVERED => 'darkBlue',
+                    TransactionStatus::CANCELED => 'danger',
+                    TransactionStatus::RETURNED => 'purple',
+                })
+                ->outlined()
                 ->extraAttributes([
-                    'style' => 'opacity:100%;', // Tambahkan kelas kustom di sini
+                    'style' => 'opacity:100%;',
                 ])
-                ->disabled()
-                ->color('gray'),
+                ->disabled(),
 
             Actions\Action::make('print-invoice')
                 ->button()
@@ -55,11 +73,10 @@ class EditTransaction extends EditRecord
                     $formData = $this->form->getState();
                     $formData['status'] = TransactionStatus::COMPLETE;
                     $record->update($formData);
-                    // $record->status = TransactionStatus::COMPLETE;
-                    // $record->save();
-                    // $this->refreshFormData(['status']);
+                    $this->isFormDisabled = true;
+
                     Notification::make()->title('Transaksi ditandai Selesai')->success()->send();
-                    return redirect(static::getUrl(['record' => $record]));
+                    // return redirect(static::getUrl(['record' => $record]));
                 }),
 
             // Actions\Action::make('deliver')
@@ -74,16 +91,21 @@ class EditTransaction extends EditRecord
             //         Notification::make()->title('Transaksi ditandai Dikirimkan')->success()->send();
             //     }),
 
-            Actions\Action::make('cancel')
+            Actions\Action::make('cancelTransaction')
                 ->button()
                 ->label('Batalkan Transaksi')
                 ->color('danger')
                 ->icon('heroicon-s-x-circle')
+                ->requiresConfirmation()
                 ->visible(fn(Transaction $transaction) => $transaction->status === TransactionStatus::NEW || $transaction->status === TransactionStatus::DELIVERED)
                 ->action(function (Transaction $record) {
-                    $record->status = TransactionStatus::CANCELED;
-                    $record->save();
+                    $formData = $this->form->getState();
+                    $formData['status'] = TransactionStatus::CANCELED;
+                    $record->update($formData);
+                    $this->isFormDisabled = true;
+
                     Notification::make()->title('Transaksi Dibatalkan')->success()->send();
+                    // return redirect(static::getUrl(['record' => $record]));
                 }),
 
             Actions\Action::make('return')
@@ -98,6 +120,8 @@ class EditTransaction extends EditRecord
                     // Mengubah Stok dengan Observer.
                     $record->status = TransactionStatus::RETURNED;
                     $record->save();
+                    $this->isFormDisabled = true;
+
                     Notification::make()->title('Pengembalian transaksi berhasil diproses')->success()->send();
                 }),
         ];

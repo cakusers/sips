@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
+use App\Filament\Resources\TransactionResource\Pages\EditTransaction;
 
 class TransactionResource extends Resource
 {
@@ -100,7 +101,9 @@ class TransactionResource extends Resource
                                     ->required()
                                     ->live()
                                     ->default(PaymentStatus::UNPAID->value)
-                                    ->disabled(fn(Get $get) => $get('status') === 'Selesai')
+                                    ->disabled(function ($livewire) {
+                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
+                                    })
                                     ->options([
                                         PaymentStatus::PAID->value => 'Lunas',
                                         PaymentStatus::UNPAID->value => 'Belum Lunas'
@@ -153,7 +156,9 @@ class TransactionResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->live(onBlur: true)
-                                    ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                                    ->disabled(function ($livewire) {
+                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
+                                    })
                                     ->afterStateUpdated(function (Get $get, Set $set, $state) {
                                         $customer = Customer::find($state);
                                         // Set kategori Pelanggan
@@ -213,7 +218,9 @@ class TransactionResource extends Resource
                                     ->label('Kategori Pelanggan')
                                     ->options(CustomerCategory::all()->pluck('name', 'id'))
                                     ->live(onBlur: true)
-                                    ->disabled(fn(Get $get) => $get('customer_id') || $get('status') !== 'Baru')
+                                    ->disabled(function ($livewire, Get $get) {
+                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled || $get('customer_id');
+                                    })
                                     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
                                     ->dehydrated(true)
                                     ->createOptionForm([
@@ -239,7 +246,9 @@ class TransactionResource extends Resource
                         ->addActionLabel('Tambahkan Sampah yang dipilih')
                         ->minItems(1)
                         ->columns(5)
-                        ->disabled(fn(Get $get) => $get('status') !== 'Baru')
+                        ->disabled(function ($livewire, Get $get) {
+                            return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
+                        })
                         ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
                             $stock = Waste::find($data['waste_id'])->stock_in_kg;
                             $stock = self::strFormat($stock);
@@ -452,7 +461,9 @@ class TransactionResource extends Resource
                             ->prefix('Rp')->numeric()
                             ->required()
                             ->readOnly()
-                            ->disabled(fn(Get $get) => $get('status') !== 'Baru'),
+                            ->disabled(function ($livewire, Get $get) {
+                                return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
+                            }),
                     ]),
             ]);
     }
