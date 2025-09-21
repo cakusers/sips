@@ -96,31 +96,31 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
      */
     protected function getFormSchema(): array
     {
-        $fakeNow = Carbon::create(2025, 7, 30);
-        Carbon::setTestNow($fakeNow);
-        try {
-            return [
-                Checkbox::make('allTimeOut')
-                    ->label('Sepanjang Waktu')
-                    ->live(),
-                Select::make('month')
-                    ->label('Bulan')
-                    ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
-                    ->default(Carbon::now()->month)
-                    ->hidden(fn(Get $get) => $get('allTimeOut'))
-                    ->native(false)
-                    ->live(),
-                Select::make('year')
-                    ->label('Tahun')
-                    ->options($this->getAvailableYear())
-                    ->default(Carbon::now()->year)
-                    ->hidden(fn(Get $get) => $get('allTimeOut'))
-                    ->native(false)
-                    ->live(),
-            ];
-        } finally {
-            Carbon::setTestNow();
-        }
+        // $fakeNow = Carbon::create(2025, 7, 30);
+        // Carbon::setTestNow($fakeNow);
+        // try {
+        return [
+            Checkbox::make('allTimeOut')
+                ->label('Sepanjang Waktu')
+                ->live(),
+            Select::make('month')
+                ->label('Bulan')
+                ->options(fn(Get $get) => $this->getAvailableMonth($get('year')))
+                ->default(Carbon::now()->month)
+                ->hidden(fn(Get $get) => $get('allTimeOut'))
+                ->native(false)
+                ->live(),
+            Select::make('year')
+                ->label('Tahun')
+                ->options($this->getAvailableYear())
+                ->default(Carbon::now()->year)
+                ->hidden(fn(Get $get) => $get('allTimeOut'))
+                ->native(false)
+                ->live(),
+        ];
+        // } finally {
+        //     Carbon::setTestNow();
+        // }
     }
 
     /**

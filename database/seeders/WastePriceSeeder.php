@@ -16,9 +16,12 @@ class WastePriceSeeder extends Seeder
      */
     public function run(): void
     {
-        $botolPet = Waste::where('name', 'Botol PET')->first();
-        $kardus = Waste::where('name', 'Kardus Bekas')->first();
-        $kaleng = Waste::where('name', 'Kaleng Aluminium')->first();
+        $botolPet = Waste::whereLike('name', '%bersih%')->first();
+        $kantong = Waste::whereLike('name', '%Kantong%')->first();
+        $botolKaca = Waste::whereLike('name', '%kaca%')->first();
+        $buku = Waste::whereLike('name', '%buku%')->first();
+        $kardus = Waste::whereLike('name', 'Kardus Bekas')->first();
+        $kaleng = Waste::whereLike('name', '%Kaleng%')->first();
         $botolktr = Waste::whereLike('name', '%kotor%')->first();
 
         $perorangan = CustomerCategory::whereLike('name', 'perorangan')->first();
@@ -27,7 +30,7 @@ class WastePriceSeeder extends Seeder
 
         $priceApril = Carbon::create(2025, 4, 1, 14, 0, 0);
         /**
-         * Botol PET
+         * Botol PET Bening Bersih
          */
         WastePrice::create([
             'waste_id' => $botolPet->id,
@@ -45,7 +48,61 @@ class WastePriceSeeder extends Seeder
         ]);
 
         /**
-         *  Kardus
+         * Kantong Kertas
+         */
+        WastePrice::create([
+            'waste_id' => $kantong->id,
+            'purchase_per_kg' => 1200,
+            'selling_per_kg' => 1700,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
+        ]);
+        WastePrice::create([
+            'waste_id' => $kantong->id,
+            'purchase_per_kg' => 1000,
+            'selling_per_kg' => 1500,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
+        ]);
+
+        /**
+         * Botol Kaca
+         */
+        WastePrice::create([
+            'waste_id' => $botolKaca->id,
+            'purchase_per_kg' => 3000,
+            'selling_per_kg' => 3500,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
+        ]);
+        WastePrice::create([
+            'waste_id' => $botolKaca->id,
+            'purchase_per_kg' => 2500,
+            'selling_per_kg' => 3000,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
+        ]);
+
+        /**
+         * Buku Bekas
+         */
+        WastePrice::create([
+            'waste_id' => $buku->id,
+            'purchase_per_kg' => 1800,
+            'selling_per_kg' => 2200,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $perorangan->id
+        ]);
+        WastePrice::create([
+            'waste_id' => $buku->id,
+            'purchase_per_kg' => 1200,
+            'selling_per_kg' => 1600,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
+        ]);
+
+        /**
+         *  Kardus Bekas
          */
         WastePrice::create([
             'waste_id' => $kardus->id,
@@ -67,21 +124,35 @@ class WastePriceSeeder extends Seeder
          */
         WastePrice::create([
             'waste_id' => $kaleng->id,
-            'purchase_per_kg' => 7000,
-            'selling_per_kg' => 9000,
+            'purchase_per_kg' => 5000,
+            'selling_per_kg' => 6000,
             'effective_start_date' => $priceApril,
             'customer_category_id' => $perorangan->id
         ]);
+        WastePrice::create([
+            'waste_id' => $kaleng->id,
+            'purchase_per_kg' => 4000,
+            'selling_per_kg' => 5000,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
+        ]);
 
         /**
-         * Kaleng
+         * Botol PET Kotor
          */
         WastePrice::create([
             'waste_id' => $botolktr->id,
-            'purchase_per_kg' => 0,
-            'selling_per_kg' => 0,
+            'purchase_per_kg' => 1000,
+            'selling_per_kg' => 1200,
             'effective_start_date' => $priceApril,
             'customer_category_id' => $perorangan->id
+        ]);
+        WastePrice::create([
+            'waste_id' => $botolktr->id,
+            'purchase_per_kg' => 800,
+            'selling_per_kg' => 1000,
+            'effective_start_date' => $priceApril,
+            'customer_category_id' => $pengepul->id
         ]);
     }
 }

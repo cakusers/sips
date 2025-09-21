@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             WasteCategoriesSeeder::class,
             WasteSeeder::class,
             WastePriceSeeder::class,
+            TransactionSeederNew::class
             // TransactionSeederApril::class,
             // TransactionSeederMay::class,
             // TransactionSeederJune::class,

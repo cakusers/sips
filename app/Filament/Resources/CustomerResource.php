@@ -51,7 +51,7 @@ class CustomerResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Select::make('customer_category_id')
-                            ->label('Tipe Pelanggan')
+                            ->label('Kategori Pelanggan')
                             ->relationship('customerCategory', 'name')
                             ->searchable()
                             ->preload()
@@ -109,10 +109,12 @@ class CustomerResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('customerCategory.name')
                     ->label('Kategori Pelanggan')
+                    ->default('-')
                     ->badge()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('No. Telepon')
+                    ->default('-')
                     ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
@@ -144,7 +146,6 @@ class CustomerResource extends Resource
                 //
             ])
             ->actions([
-                ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 DeleteAction::make()
             ])

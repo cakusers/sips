@@ -42,24 +42,20 @@ class SortMixedWaste extends Page implements HasForms
         // Cek apakah transaksi dikembalikan atau dibatalkan
 
         // Jika sudah dipilah tampilkan sampahnya
+        $loadData = ['transaction.customer', 'transaction.customerCategory'];
         if ($this->record->is_sorted) {
-            $this->form->fill(
-                $this->record->load(['transaction.customer', 'sortedWastes'])->toArray()
-            );
-        } else {
-            $this->form->fill(
-                $this->record->load('transaction.customer')->toArray()
-            );
+            array_push($loadData, 'sortedWastes');
         }
+
+        $this->form->fill(
+            $this->record->load($loadData)->toArray()
+        );
     }
 
     public function getTitle(): string | Htmlable
     {
-        return sprintf('Pilah Sampah %s', $this->record->waste->name);
+        return sprintf('Sortir Sampah %s', $this->record->waste->name);
     }
-
-
-
 
     public ?array $data = [];
 
@@ -73,7 +69,7 @@ class SortMixedWaste extends Page implements HasForms
                         TransactionStatus::RETURNED => 'dikembalikan'
                     };
 
-                    return sprintf("Sampah dari transaksi yang %s tidak dapat dipilah", $status);
+                    return sprintf("Sampah dari transaksi yang %s tidak dapat disortir", $status);
                 })
                 ->extraAttributes([
                     'style' => 'opacity:100%;', // Tambahkan kelas kustom di sini
@@ -90,7 +86,7 @@ class SortMixedWaste extends Page implements HasForms
             ->schema([
                 Section::make()
                     ->columns([
-                        'lg' => 5
+                        'lg' => 3
                     ])
                     ->schema([
                         TextInput::make('transaction.number')
@@ -108,10 +104,15 @@ class SortMixedWaste extends Page implements HasForms
                             ->disabled(),
                         TextInput::make('transaction.customer.name')
                             ->label('Pelanggan')
+                            ->afterStateHydrated(fn($state, Set $set) => !$state ? $set('transaction.customer.name', '-') : $state)
+                            ->disabled(),
+                        TextInput::make('transaction.customer_category.name')
+                            ->label('Kategori Pelanggan')
+                            ->afterStateHydrated(fn($state, Set $set) => !$state ? $set('transaction.customer.name', '-') : $state)
                             ->disabled(),
                         TextInput::make('is_sorted')
                             ->label('Status Pemilahan')
-                            ->formatStateUsing(fn($state) => $state === 0 ? 'Belum dipilah' : 'Sudah Dipilah')
+                            ->formatStateUsing(fn($state) => $state === 0 ? 'Belum Disortir' : 'Sudah Disortir')
                             ->disabled(),
                     ]),
                 Section::make()

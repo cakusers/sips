@@ -40,6 +40,7 @@ use Filament\Forms\Components\Actions\Action;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
 use App\Filament\Resources\TransactionResource\Pages\EditTransaction;
+use Filament\Forms\Components\Hidden;
 
 class TransactionResource extends Resource
 {
@@ -91,7 +92,9 @@ class TransactionResource extends Resource
                             ->schema([
                                 Forms\Components\Radio::make('type')
                                     ->label('Tipe Transaksi')
-                                    ->disabled(fn($operation) => $operation === 'edit')
+                                    ->disabled(function ($livewire) {
+                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
+                                    })
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
@@ -218,8 +221,8 @@ class TransactionResource extends Resource
                                     ->label('Kategori Pelanggan')
                                     ->options(CustomerCategory::all()->pluck('name', 'id'))
                                     ->live(onBlur: true)
-                                    ->disabled(function ($livewire, Get $get) {
-                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled || $get('customer_id');
+                                    ->disabled(function ($livewire) {
+                                        return is_a($livewire, EditTransaction::class) && $livewire->isFormDisabled;
                                     })
                                     ->afterStateUpdated(fn(Get $get, Set $set) => self::updatePriceAndSubTotal($get, $set, false))
                                     ->dehydrated(true)
@@ -478,9 +481,16 @@ class TransactionResource extends Resource
                     ->toggleable(),
                 TextColumn::make('customer.name')
                     ->label('Pelanggan')
+                    ->default('-')
                     ->searchable()
                     ->sortable()
                     ->limit(15)
+                    ->toggleable(),
+                TextColumn::make('customerCategory.name')
+                    ->label('Kategori Pelanggan')
+                    ->limit(15)
+                    ->default('-')
+                    ->searchable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
@@ -551,6 +561,16 @@ class TransactionResource extends Resource
                 SelectFilter::make('type')
                     ->label('Tipe Transaksi')
                     ->options(self::$transactionType),
+                SelectFilter::make('customer_id')
+                    ->label('Pelanggan')
+                    ->relationship('customer', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('customer_category_id')
+                    ->label('Kategori Pelanggan')
+                    ->relationship('customerCategory', 'name')
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('status')
                     ->multiple()
                     ->label('Status Transaksi')
@@ -689,13 +709,7 @@ class TransactionResource extends Resource
     {
         if (!$insideRepeater) {
             // Get semua field yang berhubungan dengan harga dan sub total
-            $customerId = $get('customer_id');
-            if ($customerId) {
-                $customer = Customer::find($customerId);
-                $customerCategoryId =  $customer->customer_category_id;
-            } else {
-                $customerCategoryId =  $get('customer_category_id');
-            }
+            $customerCategoryId =  $get('customer_category_id');
             $transactionType = $get('type');
             $transactionWastes = $get('transactionWastes');
 
@@ -731,13 +745,7 @@ class TransactionResource extends Resource
         }
 
         // Get semua field yang berhubungan dengan harga dan sub total
-        $customerId = $get('../../customer_id');
-        if ($customerId) {
-            $customer = Customer::find($customerId);
-            $customerCategoryId =  $customer->customer_category_id;
-        } else {
-            $customerCategoryId =  $get('../../customer_category_id');
-        }
+        $customerCategoryId =  $get('../../customer_category_id');
         $transactionType = $get('../../type');
         $transactionWastes = $get('../../transactionWastes');
         $wasteId = $get('waste_id');

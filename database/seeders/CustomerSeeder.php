@@ -23,7 +23,7 @@ class CustomerSeeder extends Seeder
                 'name' => 'Nicolas Noel Christianto',
                 'phone' => '09782316893',
                 'email' => '',
-                'address' => 'Jl. Kediri Ke Dara',
+                'address' => 'Jl. Sulawesi',
                 'descriptions' => '',
                 'customer_category_id' => $perorangan->id
             ],
@@ -31,7 +31,7 @@ class CustomerSeeder extends Seeder
                 'name' => 'Rizfi Ferdiansyah',
                 'phone' => '08582316111',
                 'email' => 'wiwi@gmail.com',
-                'address' => 'Jl. Anomali sahur',
+                'address' => 'Jl. Jemursari',
                 'descriptions' => '',
                 'customer_category_id' => $pabrik->id
             ],
@@ -39,7 +39,7 @@ class CustomerSeeder extends Seeder
                 'name' => 'Abram Widi Firmanto',
                 'phone' => '08582316111',
                 'email' => 'kan@gmail.com',
-                'address' => 'Jl. Anomali Lirili',
+                'address' => 'Jl. Kediri',
                 'descriptions' => '',
                 'customer_category_id' => $pengepul->id
             ],
@@ -47,7 +47,7 @@ class CustomerSeeder extends Seeder
                 'name' => 'Cakra Kusuma Erlangga Ramdani',
                 'phone' => '08582316112',
                 'email' => 'kan2@gmail.com',
-                'address' => 'Jl. Anomali Lirili',
+                'address' => 'Jl. Kedung Cowek',
                 'descriptions' => '',
                 'customer_category_id' => $perorangan->id
             ],

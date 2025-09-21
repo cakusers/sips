@@ -75,6 +75,13 @@ class MixedWasteResource extends Resource
                     ->toggleable(),
                 TextColumn::make('transaction.customer.name')
                     ->label('Pelanggan')
+                    ->default('-')
+                    ->searchable()
+                    ->limit(15)
+                    ->toggleable(),
+                TextColumn::make('transaction.customerCategory.name')
+                    ->label('Kategori Pelanggan')
+                    ->default('-')
                     ->searchable()
                     ->limit(15)
                     ->toggleable(),
@@ -128,6 +135,11 @@ class MixedWasteResource extends Resource
                 SelectFilter::make('customer')
                     ->label('Pelanggan')
                     ->relationship('transaction.customer', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('customerCategory')
+                    ->label('Kategori Pelanggan')
+                    ->relationship('transaction.customerCategory', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('waste.name')
