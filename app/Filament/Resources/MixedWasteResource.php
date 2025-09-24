@@ -57,7 +57,9 @@ class MixedWasteResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->whereHas('waste', function ($query) {
+            ->modifyQueryUsing(fn(Builder $query) => $query->whereHas('transaction', function ($query) {
+                $query->whereNot('type', TransactionType::SELL);
+            })->whereHas('waste', function ($query) {
                 $query->where('can_sorted', true);
             }))
             ->defaultSort('created_at', 'desc')

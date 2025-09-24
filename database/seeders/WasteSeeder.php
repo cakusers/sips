@@ -17,7 +17,7 @@ class WasteSeeder extends Seeder
     public function run(): void
     {
         $botolCategory = WasteCategory::whereLike('name', '%botol%')->first();
-        $plastikCategory = WasteCategory::whereLike('name', '%plastik%')->first();
+        $plastikCategory = WasteCategory::where('name', 'plastik')->first();
         $kacaCategory = WasteCategory::whereLike('name', '%kaca%')->first();
         $kertasCategory = WasteCategory::whereLike('name', '%kertas%')->first();
         $kardusCategory = WasteCategory::whereLike('name', '%kardus%')->first();

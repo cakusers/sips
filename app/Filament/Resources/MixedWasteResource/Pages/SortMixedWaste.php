@@ -142,11 +142,11 @@ class SortMixedWaste extends Page implements HasForms
                                     if ($maxQty < $totalQty) {
                                         Notification::make()
                                             ->title('Gagal Menyimpan Data')
-                                            ->body('Berat sampah pilahan melebihi sampah campuran awal')
+                                            ->body('Berat sampah sortiran melebihi berat awal')
                                             ->icon('heroicon-o-x-circle')
                                             ->danger()
                                             ->send();
-                                        $fail("Berat sampah yang dipilah melebihi sampah campuran");
+                                        $fail("Berat sampah yang disortir melebihi berat awal");
                                     }
                                 }
                             ])

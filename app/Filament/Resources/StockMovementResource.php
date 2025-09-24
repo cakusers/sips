@@ -96,6 +96,7 @@ class StockMovementResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('transaction.number')
                     ->label('Nomer Transaksi')
+                    ->default('-')
                     ->toggleable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('waste.name')

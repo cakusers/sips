@@ -92,7 +92,6 @@ class AdjustStockMovement extends Page implements HasForms
                                         'Koreksi Data' => 'Koreksi Data',
                                         'Hilang / Tidak Ditemukan' => 'Hilang / Tidak Ditemukan',
                                         'Rusak / Tidak Layak Jual' => 'Rusak / Tidak Layak Jual',
-                                        'Digunakan Internal' => 'Digunakan Internal',
                                         'other' => 'Lain-lain',
                                     ])
                                     ->required()
@@ -129,22 +128,20 @@ class AdjustStockMovement extends Page implements HasForms
             if ($quantity <= 0) {
                 throw ValidationException::withMessages(['quantity' => 'Jumlah harus lebih dari 0']);
             }
-            $movementType = '';
 
+            $movementType = '';
             if ($data['adjustment_type'] === 'add') {
-                $waste->stock_in_kg += $quantity;
                 $movementType = MovementType::MANUALIN;
-            } elseif ($data['adjustment_type'] === 'subtract') {
+            } else {
                 if ($waste->stock_in_kg < $quantity) {
                     throw ValidationException::withMessages(['quantity' => 'Jumlah pengurangan melebihi stok yang tersedia. Stok saat ini: ' . $waste->stock_in_kg . ' Kg']);
                 }
-                $waste->stock_in_kg -= $quantity;
-                $quantity = -$quantity;
                 $movementType = MovementType::MANUALOUT;
+                $quantity = -1 * $quantity;
             }
 
+            $waste->stock_in_kg += $quantity;
             $waste->save();
-
 
             // Catat pergerakan di stock_movements
             StockMovement::create([
@@ -153,6 +150,7 @@ class AdjustStockMovement extends Page implements HasForms
                 'before_movement_kg' => $currentQty,
                 'quantity_change_kg' => $quantity,
                 'current_stock_after_movement_kg' => $waste->stock_in_kg,
+                'carbon_footprint_change_kg_co2e' => $quantity * $waste->category->emission_factor,
                 'description' => $data['reason_type'] === 'other' ? $data['reason_detail'] : $data['reason_type'],
                 'transaction_id' => null,
                 'user_id' => Auth::user()->id ?? null,
