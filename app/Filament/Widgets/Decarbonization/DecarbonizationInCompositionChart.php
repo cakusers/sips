@@ -4,13 +4,14 @@ namespace App\Filament\Widgets\Decarbonization;
 
 use Carbon\Carbon;
 use Filament\Forms\Get;
+use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
-use Filament\Forms\Components\Checkbox;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\View\View;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Checkbox;
 use Illuminate\Contracts\Support\Htmlable;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
@@ -140,7 +141,7 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
             return StockMovement::query()
                 ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
                 ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-                ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
+                ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
                 ->select(
                     'waste_categories.name as category_name',
                     DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
@@ -153,7 +154,7 @@ class DecarbonizationInCompositionChart extends ApexChartWidget
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
+            ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
             ->whereMonth('stock_movements.created_at', $month)
             ->whereYear('stock_movements.created_at', $year)
             ->select(

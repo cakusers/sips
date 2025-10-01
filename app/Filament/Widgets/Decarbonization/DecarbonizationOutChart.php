@@ -165,7 +165,7 @@ class DecarbonizationOutChart extends ApexChartWidget
     protected function getYearlyCarbonOut(): Collection
     {
         $yearlyCarbon = StockMovement::query()
-            ->where('type', MovementType::SELLOUT)
+            ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->selectRaw("YEAR(created_at) as year, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon")
             ->groupBy('year')
             ->pluck('carbon', 'year');
@@ -191,7 +191,7 @@ class DecarbonizationOutChart extends ApexChartWidget
 
         $monthlyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('type', [MovementType::MANUALOUT, MovementType::SELLOUT, MovementType::RETURNEDOUT])
+            ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon')
             ->groupBy('month')
             ->pluck('carbon', 'month');
@@ -235,7 +235,7 @@ class DecarbonizationOutChart extends ApexChartWidget
 
         $weeklyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('type', [MovementType::MANUALOUT, MovementType::SELLOUT, MovementType::RETURNEDOUT])
+            ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, ABS(SUM(carbon_footprint_change_kg_co2e)) as carbon")
             ->groupBy('week_start_date')
             ->pluck('carbon', 'week_start_date');

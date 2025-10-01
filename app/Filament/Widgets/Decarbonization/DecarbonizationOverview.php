@@ -97,7 +97,7 @@ class DecarbonizationOverview extends BaseWidget
         return StockMovement::query()
             ->whereMonth('created_at', $month)
             ->whereYear('created_at', Carbon::now()->year)
-            ->where('quantity_change_kg', '>', '0')
+            ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
             ->sum('carbon_footprint_change_kg_co2e');
     }
 
@@ -117,7 +117,7 @@ class DecarbonizationOverview extends BaseWidget
         $avgCarbonFootprintOut =  StockMovement::query()
             ->whereMonth('created_at', $month)
             ->whereYear('created_at', Carbon::now()->year)
-            ->where('quantity_change_kg', '<', '0')
+            ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->avg('carbon_footprint_change_kg_co2e');
 
         return is_null($avgCarbonFootprintOut) ? 0 : abs($avgCarbonFootprintOut);

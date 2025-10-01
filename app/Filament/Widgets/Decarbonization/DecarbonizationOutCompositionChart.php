@@ -148,7 +148,7 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
             return StockMovement::query()
                 ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
                 ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-                ->where('carbon_footprint_change_kg_co2e', '<', 0.0)
+                ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
                 ->select(
                     'waste_categories.name as category_name',
                     DB::raw('ABS(SUM(stock_movements.carbon_footprint_change_kg_co2e)) as total_carbon')
@@ -161,7 +161,7 @@ class DecarbonizationOutCompositionChart extends ApexChartWidget
         return StockMovement::query()
             ->join('wastes', 'stock_movements.waste_id', '=', 'wastes.id')
             ->join('waste_categories', 'wastes.waste_category_id', '=', 'waste_categories.id')
-            ->where('carbon_footprint_change_kg_co2e', '<', 0.0)
+            ->whereIn('type', [MovementType::SELLOUT, MovementType::MANUALOUT])
             ->whereMonth('stock_movements.created_at', $month)
             ->whereYear('stock_movements.created_at', $year)
             ->select(

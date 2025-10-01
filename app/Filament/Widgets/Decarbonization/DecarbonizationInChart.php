@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Carbon\CarbonPeriod;
+use App\Enums\MovementType;
 use Filament\Support\RawJs;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
@@ -163,7 +164,7 @@ class DecarbonizationInChart extends ApexChartWidget
     protected function getYearlyCarbonIn(): Collection
     {
         $yearlyCarbon = StockMovement::query()
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
+            ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
             ->selectRaw("YEAR(created_at) as year, SUM(carbon_footprint_change_kg_co2e) as carbon")
             ->groupBy('year')
             ->pluck('carbon', 'year');
@@ -189,7 +190,7 @@ class DecarbonizationInChart extends ApexChartWidget
 
         $monthlyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
+            ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
             ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(carbon_footprint_change_kg_co2e) as carbon')
             ->groupBy('month')
             ->pluck('carbon', 'month');
@@ -233,7 +234,7 @@ class DecarbonizationInChart extends ApexChartWidget
 
         $weeklyCarbon = StockMovement::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('carbon_footprint_change_kg_co2e', '>', 0.0)
+            ->whereIn('type', [MovementType::PURCHASEIN, MovementType::MANUALIN])
             ->selectRaw("DATE(created_at - INTERVAL WEEKDAY(created_at) DAY) as week_start_date, SUM(carbon_footprint_change_kg_co2e) as carbon")
             ->groupBy('week_start_date')
             ->pluck('carbon', 'week_start_date');
