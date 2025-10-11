@@ -80,7 +80,7 @@ class CustomerResource extends Resource
                         Forms\Components\TextInput::make('address')
                             ->label('Alamat')
                             ->columnSpanFull(),
-                        Textarea::make('decription')
+                        Textarea::make('descriptions')
                             ->label('Catatan')
                             ->columnSpanFull(),
                     ])

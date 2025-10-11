@@ -27,10 +27,6 @@ class DatabaseSeeder extends Seeder
             WasteSeeder::class,
             WastePriceSeeder::class,
             TransactionSeederNew::class
-            // TransactionSeederApril::class,
-            // TransactionSeederMay::class,
-            // TransactionSeederJune::class,
-            // TransactionSeederJuly::class,
         ]);
     }
 }

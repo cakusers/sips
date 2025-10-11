@@ -14,7 +14,6 @@ class Waste extends Model
         'name',
         'img',
         'stock_in_kg',
-        'min_stock_in_kg',
         'can_sorted',
         'waste_category_id'
     ];
@@ -29,10 +28,16 @@ class Waste extends Model
         });
     }
 
-    public function latestPrice()
-    {
-        return $this->hasOne(WastePrice::class)->latestOfMany();
-    }
+    // public function latestWastePrices(): HasMany
+    // {
+    //     return $this->hasMany(WastePrice::class)
+    //         ->whereIn('id', function ($query) {
+    //             $query->selectRaw('MAX(id)')
+    //                 ->from('waste_prices')
+    //                 ->whereColumn('waste_id', 'wastes.id')
+    //                 ->groupBy('customer_category_id');
+    //         });
+    // }
 
     public function category(): BelongsTo
     {

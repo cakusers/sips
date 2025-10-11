@@ -2,18 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\UserRole;
 use Filament\Tables;
 use App\Models\Waste;
+use App\Enums\UserRole;
 use Filament\Forms\Form;
+use App\Models\WastePrice;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Livewire\Component as Livewire;
 use Filament\Forms\Components\Radio;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\FileUpload;
@@ -22,7 +25,7 @@ use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\WasteResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\WasteResource\RelationManagers\WastePricesRelationManager;
-use Illuminate\Support\Facades\Auth;
+use App\Models\CustomerCategory;
 
 class WasteResource extends Resource
 {
@@ -76,18 +79,17 @@ class WasteResource extends Resource
                 Section::make()
                     ->hidden(fn() => Auth::user()->role === UserRole::SORTER)
                     ->schema([
-                        Repeater::make('wastePrices')
+                        Repeater::make('latestWastePrices')
                             ->label('Harga Sampah yang Berlaku')
                             ->minItems(1)
                             ->addActionLabel('Tambahkan Harga Sampah')
                             ->columns([
                                 'lg' => 3
                             ])
-                            ->relationship()
                             ->schema([
                                 Select::make('customer_category_id')
                                     ->label('Kategori Pelanggan')
-                                    ->relationship('customerCategory', 'name')
+                                    ->options(CustomerCategory::all()->pluck('name', 'id'))
                                     ->required()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->createOptionForm([

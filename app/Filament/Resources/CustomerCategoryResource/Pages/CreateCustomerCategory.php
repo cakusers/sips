@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateCustomerCategory extends CreateRecord
 {
     protected static string $resource = CustomerCategoryResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

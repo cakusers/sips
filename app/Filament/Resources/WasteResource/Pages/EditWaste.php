@@ -8,6 +8,9 @@ use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Filament\Resources\WasteResource;
+use App\Models\Waste;
+
+use function PHPUnit\Framework\countOf;
 
 class EditWaste extends EditRecord
 {
@@ -15,38 +18,81 @@ class EditWaste extends EditRecord
 
     protected ?bool $hasDatabaseTransactions = true;
 
-    // protected function mutateFormDataBeforeFill(array $data): array
-    // {
-    //     // dd($data);
-    //     $current_price = WastePrice::query()->where('waste_id', $data['id'])->get()->last();
-    //     $data['purchase_per_kg'] = $current_price->purchase_per_kg;
-    //     $data['selling_per_kg'] = $current_price->selling_per_kg;
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $latestWastePrices = $this->getLatestWastePrices($this->record->id);
+        // dd($latestWastePrices);
+        $data['latestWastePrices'] = $latestWastePrices;
+        return $data;
+    }
 
-    //     return $data;
-    // }
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
 
-    // protected function handleRecordUpdate(Model $record, array $data): Model
-    // {
+        $latestWastePrices = $this->getLatestWastePrices($this->record->id);
+        $latestPrices = [];
+        foreach ($latestWastePrices as $price) {
+            $custCategoryId = $price['customer_category_id'];
+            $latestPrices[$custCategoryId] = $price;
+        }
 
-    //     // dd([$record, $data]);
-    //     $record->update($data);
+        $submittedPrices = $data['latestWastePrices'];
+        // dd($submittedPrices, $latestPrices);
 
-    //     WastePrice::create([
-    //         'waste_id' => $record->id,
-    //         'purchase_per_kg' => $this->form->getState()['purchase_per_kg'],
-    //         'selling_per_kg' => $this->form->getState()['selling_per_kg'],
-    //         // 'min_stock_in_kg' => $data['min_stock_in_kg']
-    //     ]);
+        foreach ($submittedPrices as $submittedPrice) {
+            $custCategoryId = $submittedPrice['customer_category_id'];
 
-    //     $this->dispatch('refreshHistori');
+            $submittedPrice['purchase_per_kg'] = (int) str_replace('.', '', $submittedPrice['purchase_per_kg']);
+            $submittedPrice['selling_per_kg'] = (int) str_replace('.', '', $submittedPrice['selling_per_kg']);
 
-    //     return $record;
-    // }
+            $isNewPrice = !isset($latestPrices[$custCategoryId]);
+            if ($isNewPrice) {
+                WastePrice::create([
+                    'purchase_per_kg' => $submittedPrice['purchase_per_kg'],
+                    'selling_per_kg' => $submittedPrice['selling_per_kg'],
+                    'waste_id' => $this->record->id,
+                    'customer_category_id' => $custCategoryId
+                ]);
+            } else {
+                $latestPrice = $latestPrices[$custCategoryId];
+                if (
+                    $submittedPrice['purchase_per_kg'] != $latestPrice['purchase_per_kg']
+                    || $submittedPrice['selling_per_kg'] != $latestPrice['selling_per_kg']
+                ) {
+                    WastePrice::create([
+                        'purchase_per_kg' => $submittedPrice['purchase_per_kg'],
+                        'selling_per_kg' => $submittedPrice['selling_per_kg'],
+                        'waste_id' => $this->record->id,
+                        'customer_category_id' => $custCategoryId
+                    ]);
+                }
+            }
+        };
+
+        $this->dispatch('refreshHistori');
+
+        return $data;
+    }
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getLatestWastePrices($wasteId)
+    {
+        $wastePrices = WastePrice::where('waste_id', $wasteId)
+            ->latest()
+            ->get()
+            ->groupBy('customer_category_id');
+
+        $latestWastePrices = [];
+        foreach ($wastePrices->toArray() as $wasteprice => $value) {
+            array_push($latestWastePrices, $value[0]);
+        }
+
+        return $latestWastePrices;
     }
 }
