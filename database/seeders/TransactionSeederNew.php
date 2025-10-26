@@ -46,14 +46,14 @@ class TransactionSeederNew extends Seeder
         $tahun = 2025;
         $bulan = 8;
 
-        $tanggal = Carbon::create($tahun, $bulan, 2, 10, 0);
+        $tanggal = Carbon::create($tahun, $bulan, 18, 10, 0);
         $sampah = $kaleng;
-        $customer = $abram;
+        $qty = 10;
+        $customer = $noel;
         $statusTransaksi = TransactionStatus::COMPLETE;
         $statusPembayaran = PaymentStatus::PAID;
         $tipe = TransactionType::PURCHASE;
         $harga = $this->getPrice($tipe, $sampah, $customer);
-        $qty = 4;
 
         $transaksi = Transaction::create([
             'type' => $tipe,
@@ -75,7 +75,150 @@ class TransactionSeederNew extends Seeder
             'updated_at' => $tanggal
         ]);
 
+        $tanggal = Carbon::create($tahun, $bulan, 19, 10, 0);
+        $sampah = $botolPet;
+        $qty = 40;
+        $customer = $abram;
+        $statusTransaksi = TransactionStatus::COMPLETE;
+        $statusPembayaran = PaymentStatus::PAID;
+        $tipe = TransactionType::PURCHASE;
+        $harga = $this->getPrice($tipe, $sampah, $customer);
 
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => $statusTransaksi,
+            'payment_status' => $statusPembayaran,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->id,
+            'customer_category_id' => $customer->customer_category_id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create($tahun, $bulan, 20, 10, 0);
+        $tipe = TransactionType::SELL;
+        $customer = $abram;
+        $sampah = $kaleng;
+        $qty = 10;
+        $statusTransaksi = TransactionStatus::COMPLETE;
+        $statusPembayaran = PaymentStatus::PAID;
+        $harga = $this->getPrice($tipe, $sampah, $customer);
+
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => $statusTransaksi,
+            'payment_status' => $statusPembayaran,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->id,
+            'customer_category_id' => $customer->customer_category_id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create($tahun, $bulan, 25, 10, 0);
+        $tipe = TransactionType::SELL;
+        $customer = $abram;
+        $sampah = $botolPet;
+        $qty = 12.5;
+        $statusTransaksi = TransactionStatus::COMPLETE;
+        $statusPembayaran = PaymentStatus::PAID;
+        $harga = $this->getPrice($tipe, $sampah, $customer);
+
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => $statusTransaksi,
+            'payment_status' => $statusPembayaran,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->id,
+            'customer_category_id' => $customer->customer_category_id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create($tahun, $bulan, 26, 10, 0);
+        $tipe = TransactionType::SELL;
+        $customer = $cakra;
+        $sampah = $botolPet;
+        $qty = 10;
+        $statusTransaksi = TransactionStatus::COMPLETE;
+        $statusPembayaran = PaymentStatus::PAID;
+        $harga = $this->getPrice($tipe, $sampah, $customer);
+
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => $statusTransaksi,
+            'payment_status' => $statusPembayaran,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->id,
+            'customer_category_id' => $customer->customer_category_id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+
+        $tanggal = Carbon::create($tahun, $bulan, 27, 10, 0);
+        $tipe = TransactionType::SELL;
+        $customer = $abram;
+        $sampah = $botolPet;
+        $qty = 17.5;
+        $statusTransaksi = TransactionStatus::COMPLETE;
+        $statusPembayaran = PaymentStatus::PAID;
+        $harga = $this->getPrice($tipe, $sampah, $customer);
+
+        $transaksi = Transaction::create([
+            'type' => $tipe,
+            'status' => $statusTransaksi,
+            'payment_status' => $statusPembayaran,
+            'total_price' => $harga * $qty,
+            'customer_id' => $customer->id,
+            'customer_category_id' => $customer->customer_category_id,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
+        TransactionWaste::create([
+            'transaction_id' => $transaksi->id,
+            'waste_id' => $sampah->id,
+            'qty_in_kg' => $qty,
+            'unit_price' => $harga,
+            'sub_total_price' => $qty * $harga,
+            'created_at' => $tanggal,
+            'updated_at' => $tanggal
+        ]);
 
 
         /**
